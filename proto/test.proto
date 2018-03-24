@@ -1,0 +1,9 @@
+syntax="proto3";
+
+package proto;
+
+service Test {
+    rpc Ping(Void) returns (Void) {}
+}
+
+message Void {}
