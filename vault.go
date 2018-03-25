@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenk/backoff"
 	"github.com/hashicorp/vault/api"
 )
 
@@ -46,9 +45,9 @@ func connect(
 	allowHTTP bool,
 	tlsConfig *tls.Config,
 ) (*api.Client, error) {
-	bk := backoff.NewExponentialBackOff()
-	// Ensure perpetual retries
-	bk.MaxElapsedTime = 0
+	if vaultURL.Scheme != "https" && !allowHTTP {
+		return nil, errors.New("not allowing insecure transport; enable InsecureAllowHTTP if necessary")
+	}
 
 	vConf := api.DefaultConfig()
 
@@ -60,41 +59,13 @@ func connect(
 	if ok {
 		vConf.Timeout = dl.Sub(time.Now())
 	}
-
-	var cli *api.Client
-	connect := func() error {
-		if vaultURL.Scheme != "https" && !allowHTTP {
-			return backoff.Permanent(errors.New("not allowing insecure transport"))
-		}
-		vConf.Address = vaultURL.String()
-		var err error
-		cli, err = api.NewClient(vConf)
-		if err != nil {
-			return err
-		}
-
-		cli.SetToken(token)
-		data, err := cli.Logical().Read("pki/roles/" + role)
-		if err != nil {
-			return err
-		}
-
-		if data == nil {
-			return backoff.Permanent(errors.New("role does not exist"))
-		}
-
-		return nil
-	}
-
-	err := backoff.Retry(connect, backoff.WithContext(bk, ctx))
+	vConf.Address = vaultURL.String()
+	cli, err := api.NewClient(vConf)
 	if err != nil {
-		if e, ok := err.(*backoff.PermanentError); ok {
-			return nil, e.Err
-		}
-
 		return nil, err
 	}
 
+	cli.SetToken(token)
 	return cli, nil
 }
 
