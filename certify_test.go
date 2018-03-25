@@ -1,4 +1,4 @@
-package certbot_test
+package certify_test
 
 import (
 	"context"
@@ -16,20 +16,20 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 
-	"github.com/johanbrandhorst/certbot"
-	"github.com/johanbrandhorst/certbot/proto"
+	"github.com/johanbrandhorst/certify"
+	"github.com/johanbrandhorst/certify/proto"
 )
 
 //go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
 
-var _ = Describe("Certbot", func() {
-	var issuer certbot.Issuer
+var _ = Describe("Certify", func() {
+	var issuer certify.Issuer
 
 	Context("when using a Vault Issuer", func() {
 		BeforeEach(func() {
 			cp := x509.NewCertPool()
 			Expect(cp.AppendCertsFromPEM(httpCertPEM)).To(BeTrue())
-			iss := &certbot.VaultIssuer{
+			iss := &certify.VaultIssuer{
 				VaultURL: vaultURL,
 				Token:    rootToken,
 				Role:     testRole,
@@ -42,10 +42,10 @@ var _ = Describe("Certbot", func() {
 		})
 
 		It("issues a valid certificate", func() {
-			cli := &certbot.Certbot{
+			cli := &certify.Certify{
 				CommonName: "myserver.com",
 				Issuer:     issuer,
-				CertConfig: &certbot.CertConfig{
+				CertConfig: &certify.CertConfig{
 					TimeToLive:                time.Minute * 10,
 					SubjectAlternativeNames:   []string{"extraname.com"},
 					IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
@@ -82,10 +82,10 @@ var _ = Describe("Certbot", func() {
 
 		Context("when there is a matching certificate in the cache", func() {
 			It("doesn't request a new one from Vault", func() {
-				cli := &certbot.Certbot{
+				cli := &certify.Certify{
 					CommonName: "myserver.com",
 					Issuer:     issuer,
-					Cache:      certbot.NewMemCache(),
+					Cache:      certify.NewMemCache(),
 				}
 
 				cert1, err := cli.GetCertificate(&tls.ClientHelloInfo{
@@ -107,12 +107,12 @@ var _ = Describe("Certbot", func() {
 
 			Context("but the certificate expiry is within the RenewThreshold", func() {
 				It("requests a new certificate", func() {
-					cli := &certbot.Certbot{
+					cli := &certify.Certify{
 						CommonName:     "myserver.com",
 						Issuer:         issuer,
-						Cache:          certbot.NewMemCache(),
+						Cache:          certify.NewMemCache(),
 						RenewThreshold: time.Hour,
-						CertConfig: &certbot.CertConfig{
+						CertConfig: &certify.CertConfig{
 							// Create certs with lower TTL than RenewThreshold
 							// to force renewal every time.
 							TimeToLive: 30 * time.Minute,
@@ -148,11 +148,11 @@ var _ = Describe("Certbot", func() {
 })
 
 var _ = Describe("The Cache", func() {
-	var c certbot.Cache
+	var c certify.Cache
 
 	Context("when using the memcache", func() {
 		BeforeEach(func() {
-			c = certbot.NewMemCache()
+			c = certify.NewMemCache()
 		})
 
 		Context("after putting in a certificate", func() {
@@ -166,14 +166,14 @@ var _ = Describe("The Cache", func() {
 				Expect(c.Get(context.Background(), "key1")).To(Equal(cert))
 				Expect(c.Delete(context.Background(), "key1")).To(Succeed())
 				_, err := c.Get(context.Background(), "key1")
-				Expect(err).To(Equal(certbot.ErrCacheMiss))
+				Expect(err).To(Equal(certify.ErrCacheMiss))
 			})
 		})
 
 		Context("when getting a key that doesn't exist", func() {
 			It("returns ErrCacheMiss", func() {
 				_, err := c.Get(context.Background(), "key1")
-				Expect(err).To(Equal(certbot.ErrCacheMiss))
+				Expect(err).To(Equal(certify.ErrCacheMiss))
 			})
 		})
 
@@ -224,7 +224,7 @@ func (_ backend) Ping(_ context.Context, _ *proto.Void) (*proto.Void, error) {
 
 var _ = Describe("gRPC Test", func() {
 	Context("when using mutual TLS authentication", func() {
-		var cb *certbot.Certbot
+		var cb *certify.Certify
 		addr := "localhost:0"
 		var srv *grpc.Server
 		var cc *grpc.ClientConn
@@ -241,12 +241,12 @@ var _ = Describe("gRPC Test", func() {
 		It("allows client and server to talk to each other", func() {
 			var lis net.Listener
 			var cli proto.TestClient
-			By("Creating the Certbot", func() {
+			By("Creating the Certify", func() {
 				cp := x509.NewCertPool()
 				Expect(cp.AppendCertsFromPEM(httpCertPEM)).To(BeTrue())
-				cb = &certbot.Certbot{
-					CommonName: "Certbot",
-					Issuer: &certbot.VaultIssuer{
+				cb = &certify.Certify{
+					CommonName: "Certify",
+					Issuer: &certify.VaultIssuer{
 						VaultURL: vaultURL,
 						Token:    rootToken,
 						Role:     testRole,
@@ -254,7 +254,7 @@ var _ = Describe("gRPC Test", func() {
 							RootCAs: cp,
 						},
 					},
-					Cache:          certbot.NewMemCache(),
+					Cache:          certify.NewMemCache(),
 					RenewThreshold: time.Hour,
 				}
 			})
