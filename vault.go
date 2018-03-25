@@ -10,21 +10,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenk/backoff"
 	"github.com/hashicorp/vault/api"
 )
 
 // VaultIssuer implements the Issuer interface with a
-// Hashicorp Vault PKI Secrets backend.
+// Hashicorp Vault PKI Secrets Engine backend.
 //
-// VaultURLs, Token and Role are required.
+// VaultURL, Token and Role are required.
 type VaultIssuer struct {
-	// VaultURLs is a slice of URLs that will be
-	// used to connect Vault. At least one URL is required,
-	// and several can be used in a High Availability Vault setup.
-	// The client will cycle through the specified URLs when attempting
-	// to establish a connection.
-	VaultURLs []*url.URL
+	// VaultURL is the URL of the Vault instance.
+	VaultURL *url.URL
 	// Token is the Vault secret token that should be used
 	// when issuing certificates.
 	Token string
@@ -44,15 +39,15 @@ type VaultIssuer struct {
 
 func connect(
 	ctx context.Context,
-	vaultURLs []*url.URL,
+	vaultURL *url.URL,
 	role,
 	token string,
 	allowHTTP bool,
 	tlsConfig *tls.Config,
 ) (*api.Client, error) {
-	bk := backoff.NewExponentialBackOff()
-	// Ensure perpetual retries
-	bk.MaxElapsedTime = 0
+	if vaultURL.Scheme != "https" && !allowHTTP {
+		return nil, errors.New("not allowing insecure transport; enable InsecureAllowHTTP if necessary")
+	}
 
 	vConf := api.DefaultConfig()
 
@@ -64,46 +59,13 @@ func connect(
 	if ok {
 		vConf.Timeout = dl.Sub(time.Now())
 	}
-
-	urlIndex := 0
-
-	var cli *api.Client
-	connect := func() error {
-		u := vaultURLs[urlIndex]
-		// Cycle urlIndex between 0 - len(vaultURLs)-1
-		urlIndex = (urlIndex + 1) % len(vaultURLs)
-		if u.Scheme != "https" && !allowHTTP {
-			return backoff.Permanent(errors.New("not allowing insecure transport"))
-		}
-		vConf.Address = u.String()
-		var err error
-		cli, err = api.NewClient(vConf)
-		if err != nil {
-			return err
-		}
-
-		cli.SetToken(token)
-		data, err := cli.Logical().Read("pki/roles/" + role)
-		if err != nil {
-			return err
-		}
-
-		if data == nil {
-			return backoff.Permanent(errors.New("role does not exist"))
-		}
-
-		return nil
-	}
-
-	err := backoff.Retry(connect, backoff.WithContext(bk, ctx))
+	vConf.Address = vaultURL.String()
+	cli, err := api.NewClient(vConf)
 	if err != nil {
-		if e, ok := err.(*backoff.PermanentError); ok {
-			return nil, e.Err
-		}
-
 		return nil, err
 	}
 
+	cli.SetToken(token)
 	return cli, nil
 }
 
@@ -111,7 +73,7 @@ func connect(
 // a connection will be made in the first Issue call.
 func (v *VaultIssuer) Connect(ctx context.Context) error {
 	var err error
-	v.cli, err = connect(ctx, v.VaultURLs, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
+	v.cli, err = connect(ctx, v.VaultURL, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
 	return err
 }
 
@@ -125,19 +87,13 @@ func (v *VaultIssuer) Issue(ctx context.Context, commonName string, conf *CertCo
 		}
 	}
 
-	if len(commonName) > 64 {
-		// https://www.ietf.org/rfc/rfc3280.txt
-		// ub-common-name-length INTEGER ::= 64
-		return nil, errors.New("common name cannot be larger than 64 bytes")
-	}
-
 	// https://www.vaultproject.io/api/secret/pki/index.html#parameters-6
 	opts := map[string]interface{}{
-		"common_name": commonName,
-		// Defaults, but can't hurt specifying them
-		"private_key_format":   "der", // Actually returns PEM because of below
-		"format":               "pem",
+		"common_name":          commonName,
 		"exclude_cn_from_sans": true,
+		// Defaults, but can't hurt specifying them
+		"private_key_format": "der", // Actually returns PEM because of below
+		"format":             "pem",
 	}
 
 	if conf != nil {

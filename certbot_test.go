@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"net"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -31,9 +30,9 @@ var _ = Describe("Certbot", func() {
 			cp := x509.NewCertPool()
 			Expect(cp.AppendCertsFromPEM(httpCertPEM)).To(BeTrue())
 			iss := &certbot.VaultIssuer{
-				VaultURLs: []*url.URL{vaultURL},
-				Token:     rootToken,
-				Role:      testRole,
+				VaultURL: vaultURL,
+				Token:    rootToken,
+				Role:     testRole,
 				TLSConfig: &tls.Config{
 					RootCAs: cp,
 				},
@@ -248,9 +247,9 @@ var _ = Describe("gRPC Test", func() {
 				cb = &certbot.Certbot{
 					CommonName: "Certbot",
 					Issuer: &certbot.VaultIssuer{
-						VaultURLs: []*url.URL{vaultURL},
-						Token:     rootToken,
-						Role:      testRole,
+						VaultURL: vaultURL,
+						Token:    rootToken,
+						Role:     testRole,
 						TLSConfig: &tls.Config{
 							RootCAs: cp,
 						},

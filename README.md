@@ -1,25 +1,29 @@
 # Certbot
+[![GoDoc](https://godoc.org/github.com/johanbrandhorst/certbot?status.svg)](https://godoc.org/github.com/johanbrandhorst/certbot)
+[![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certbot)](https://goreportcard.com/report/github.com/johanbrandhorst/certbot)
 
 Certbot allows easy automatic certificate distribution and maintenance.
-It exposes an `Issuer` interface which is used to allow switching
-between issuer backends.
+Certificates are requested as TLS connectoins
+are made, courtesy of the `GetCertificate` and `GetClientCertificate`
+`tls.Config` hooks. Certificates are optionally cached.
 
 ## Issuers
 
+Certbot exposes an `Issuer` interface which is used to allow switching
+between issuer backends.
+
 Currently implemented issuers:
 
-1. Vault PKI Secret Engine
+- Vault PKI Secrets Engine
 
 ## Usage
 
 Create an issuer:
 ```go
 issuer := &certbot.VaultIssuer{
-    VaultURLs: []*url.URL{
-        &url.URL{
-            Scheme: "https",
-            Host: "my-local-vault-instance.com"
-        },
+    VaultURL: &url.URL{
+        Scheme: "https",
+        Host: "my-local-vault-instance.com"
     },
     Token:     "myVaultToken",
     Role:      "myVaultRole",
