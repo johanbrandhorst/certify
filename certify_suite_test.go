@@ -1,6 +1,7 @@
 package certify_test
 
 import (
+	"archive/tar"
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
@@ -8,11 +9,10 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"net/url"
-	"path"
+	"os"
 	"testing"
 	"time"
 
@@ -42,49 +42,95 @@ var (
 var _ = BeforeSuite(func() {
 	rootToken = "mysecrettoken"
 	testRole = "test"
+	host := "localhost"
+	if os.Getenv("DOCKER_HOST") != "" {
+		u, err := url.Parse(os.Getenv("DOCKER_HOST"))
+		Expect(err).To(Succeed())
+		host, _, err = net.SplitHostPort(u.Host)
+		Expect(err).To(Succeed())
+	}
 
 	var key []byte
 	var err error
-	httpCertPEM, key, err = generateCertAndKey("localhost", net.IPv4(127, 0, 0, 1))
+	httpCertPEM, key, err = generateCertAndKey(host, net.IPv4(127, 0, 0, 1))
 	Expect(err).To(Succeed())
-	d, err := ioutil.TempDir("", "dockertest")
-	Expect(err).To(Succeed())
-	certFile := path.Join(d, "cert.pem")
-	keyFile := path.Join(d, "key.pem")
-	Expect(ioutil.WriteFile(certFile, httpCertPEM, 0644)).To(Succeed())
-	Expect(ioutil.WriteFile(keyFile, key, 0644)).To(Succeed())
+
+	b := &bytes.Buffer{}
+	archive := tar.NewWriter(b)
+	Expect(archive.WriteHeader(&tar.Header{
+		Name: "/cert.pem",
+		Mode: 0644,
+		Size: int64(len(httpCertPEM)),
+	})).To(Succeed())
+	Expect(archive.Write(httpCertPEM)).To(Equal(len(httpCertPEM)))
+	Expect(archive.WriteHeader(&tar.Header{
+		Name: "/key.pem",
+		Mode: 0644,
+		Size: int64(len(key)),
+	})).To(Succeed())
+	Expect(archive.Write(key)).To(Equal(len(key)))
+	Expect(archive.Close()).To(Succeed())
 
 	By("Starting the Vault container", func() {
 		var err error
 		pool, err = dockertest.NewPool("")
 		Expect(err).To(Succeed())
 
-		vaultContainer, err = pool.RunWithOptions(&dockertest.RunOptions{
-			Repository: "vault",
-			Env: []string{
-				"VAULT_DEV_ROOT_TOKEN_ID=" + rootToken,
-				`VAULT_LOCAL_CONFIG={
-				"default_lease_ttl": "168h",
-				"max_lease_ttl": "720h",
-				"disable_mlock": true,
-				"listener": [{
-					"tcp" :{
-						"address": "0.0.0.0:8201",
-						"tls_cert_file": "/vault/file/cert.pem",
-						"tls_key_file": "/vault/file/key.pem"
-					}
-				}]
-			}`,
+		_, err = pool.Client.InspectImage("vault:latest")
+		if err != nil {
+			// Pull image
+			Expect(pool.Client.PullImage(docker.PullImageOptions{
+				Repository: "vault",
+				Tag:        "latest",
+			}, docker.AuthConfiguration{})).To(Succeed())
+		}
+
+		c, err := pool.Client.CreateContainer(docker.CreateContainerOptions{
+			Name: "vault",
+			Config: &docker.Config{
+				Image: "vault:latest",
+				Env: []string{
+					"VAULT_DEV_ROOT_TOKEN_ID=" + rootToken,
+					`VAULT_LOCAL_CONFIG={
+						"default_lease_ttl": "168h",
+						"max_lease_ttl": "720h",
+						"disable_mlock": true,
+						"listener": [{
+							"tcp" :{
+								"address": "0.0.0.0:8201",
+								"tls_cert_file": "/vault/file/cert.pem",
+								"tls_key_file": "/vault/file/key.pem"
+							}
+						}]
+					}`,
+				},
+				ExposedPorts: map[docker.Port]struct{}{
+					docker.Port("8200"): struct{}{},
+					docker.Port("8201"): struct{}{},
+				},
 			},
-			Mounts: []string{
-				certFile + ":/vault/file/cert.pem",
-				keyFile + ":/vault/file/key.pem",
-			},
-			ExposedPorts: []string{"8201"},
-			PortBindings: map[docker.Port][]docker.PortBinding{
-				"8201": []docker.PortBinding{{HostPort: "8201"}},
+			HostConfig: &docker.HostConfig{
+				NetworkMode:     "host",
+				PublishAllPorts: true,
+				PortBindings: map[docker.Port][]docker.PortBinding{
+					"8200": []docker.PortBinding{{HostPort: "8200"}},
+					"8201": []docker.PortBinding{{HostPort: "8201"}},
+				},
 			},
 		})
+		Expect(err).To(Succeed())
+		vaultContainer = &dockertest.Resource{
+			Container: c,
+		}
+
+		Expect(pool.Client.UploadToContainer(c.ID, docker.UploadToContainerOptions{
+			InputStream: b,
+			Path:        "/vault/file/",
+		})).To(Succeed())
+
+		Expect(pool.Client.StartContainer(c.ID, nil)).To(Succeed())
+
+		vaultContainer.Container, err = pool.Client.InspectContainer(c.ID)
 		Expect(err).To(Succeed())
 
 		wait, err = pool.Client.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
@@ -99,13 +145,13 @@ var _ = BeforeSuite(func() {
 
 		vaultURL = &url.URL{
 			Scheme: "https",
-			Host:   net.JoinHostPort("localhost", "8201"),
+			Host:   net.JoinHostPort(host, "8201"),
 		}
 	})
 
 	By("Mounting the PKI backend and creating the role", func() {
 		conf := api.DefaultConfig()
-		conf.Address = "http://" + net.JoinHostPort(vaultContainer.Container.NetworkSettings.IPAddress, "8200")
+		conf.Address = "http://" + net.JoinHostPort(host, "8200")
 		cli, err := api.NewClient(conf)
 		Expect(err).To(Succeed())
 		cli.SetToken(rootToken)
