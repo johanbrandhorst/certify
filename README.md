@@ -1,4 +1,6 @@
 # Certbot
+[![GoDoc](https://godoc.org/github.com/johanbrandhorst/certbot?status.svg)](https://godoc.org/github.com/johanbrandhorst/certbot)
+[![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certbot)](https://goreportcard.com/report/github.com/johanbrandhorst/certbot)
 
 Certbot allows easy automatic certificate distribution and maintenance.
 It exposes an `Issuer` interface which is used to allow switching
