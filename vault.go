@@ -15,16 +15,12 @@ import (
 )
 
 // VaultIssuer implements the Issuer interface with a
-// Hashicorp Vault PKI Secrets backend.
+// Hashicorp Vault PKI Secrets Engine backend.
 //
-// VaultURLs, Token and Role are required.
+// VaultURL, Token and Role are required.
 type VaultIssuer struct {
-	// VaultURLs is a slice of URLs that will be
-	// used to connect Vault. At least one URL is required,
-	// and several can be used in a High Availability Vault setup.
-	// The client will cycle through the specified URLs when attempting
-	// to establish a connection.
-	VaultURLs []*url.URL
+	// VaultURL is the URL of the Vault instance.
+	VaultURL *url.URL
 	// Token is the Vault secret token that should be used
 	// when issuing certificates.
 	Token string
@@ -44,7 +40,7 @@ type VaultIssuer struct {
 
 func connect(
 	ctx context.Context,
-	vaultURLs []*url.URL,
+	vaultURL *url.URL,
 	role,
 	token string,
 	allowHTTP bool,
@@ -65,17 +61,12 @@ func connect(
 		vConf.Timeout = dl.Sub(time.Now())
 	}
 
-	urlIndex := 0
-
 	var cli *api.Client
 	connect := func() error {
-		u := vaultURLs[urlIndex]
-		// Cycle urlIndex between 0 - len(vaultURLs)-1
-		urlIndex = (urlIndex + 1) % len(vaultURLs)
-		if u.Scheme != "https" && !allowHTTP {
+		if vaultURL.Scheme != "https" && !allowHTTP {
 			return backoff.Permanent(errors.New("not allowing insecure transport"))
 		}
-		vConf.Address = u.String()
+		vConf.Address = vaultURL.String()
 		var err error
 		cli, err = api.NewClient(vConf)
 		if err != nil {
@@ -111,7 +102,7 @@ func connect(
 // a connection will be made in the first Issue call.
 func (v *VaultIssuer) Connect(ctx context.Context) error {
 	var err error
-	v.cli, err = connect(ctx, v.VaultURLs, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
+	v.cli, err = connect(ctx, v.VaultURL, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
 	return err
 }
 
@@ -125,19 +116,13 @@ func (v *VaultIssuer) Issue(ctx context.Context, commonName string, conf *CertCo
 		}
 	}
 
-	if len(commonName) > 64 {
-		// https://www.ietf.org/rfc/rfc3280.txt
-		// ub-common-name-length INTEGER ::= 64
-		return nil, errors.New("common name cannot be larger than 64 bytes")
-	}
-
 	// https://www.vaultproject.io/api/secret/pki/index.html#parameters-6
 	opts := map[string]interface{}{
-		"common_name": commonName,
-		// Defaults, but can't hurt specifying them
-		"private_key_format":   "der", // Actually returns PEM because of below
-		"format":               "pem",
+		"common_name":          commonName,
 		"exclude_cn_from_sans": true,
+		// Defaults, but can't hurt specifying them
+		"private_key_format": "der", // Actually returns PEM because of below
+		"format":             "pem",
 	}
 
 	if conf != nil {

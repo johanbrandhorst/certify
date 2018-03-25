@@ -17,11 +17,9 @@ Currently implemented issuers:
 Create an issuer:
 ```go
 issuer := &certbot.VaultIssuer{
-    VaultURLs: []*url.URL{
-        &url.URL{
-            Scheme: "https",
-            Host: "my-local-vault-instance.com"
-        },
+    VaultURL: &url.URL{
+        Scheme: "https",
+        Host: "my-local-vault-instance.com"
     },
     Token:     "myVaultToken",
     Role:      "myVaultRole",
