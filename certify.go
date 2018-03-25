@@ -1,4 +1,4 @@
-package certbot
+package certify
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 	"time"
 )
 
-// Certbot implements automatic certificate acquisition
+// Certify implements automatic certificate acquisition
 // via the configured Issuer.
 //
 // CommonName and Issuer are required.
 // It is recommended that you specify a Cache to prevent requesting a
 // new certificate for every incoming connection.
-type Certbot struct {
+type Certify struct {
 	// CommonName is the Certificate Common Name
 	// that will be used when issuing certificates.
 	// This can be a DNS record or a regular name.
@@ -43,7 +43,7 @@ type Certbot struct {
 }
 
 // GetCertificate implements the GetCertificate TLS config hook.
-func (c *Certbot) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 	name := strings.ToLower(hello.ServerName)
 	if name == "" {
 		return nil, errors.New("missing server name")
@@ -70,7 +70,7 @@ func (c *Certbot) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 }
 
 // GetClientCertificate implements the GetClientCertificate TLS config hook.
-func (c *Certbot) GetClientCertificate(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 	issueTimeout := c.IssueTimeout
 	if issueTimeout == 0 {
 		issueTimeout = time.Minute
@@ -81,7 +81,7 @@ func (c *Certbot) GetClientCertificate(_ *tls.CertificateRequestInfo) (*tls.Cert
 	return c.getOrRenewCert(ctx, c.CommonName)
 }
 
-func (c *Certbot) getOrRenewCert(ctx context.Context, name string) (*tls.Certificate, error) {
+func (c *Certify) getOrRenewCert(ctx context.Context, name string) (*tls.Certificate, error) {
 	if c.Cache != nil {
 		cert, err := c.Cache.Get(ctx, name)
 		if err == nil {

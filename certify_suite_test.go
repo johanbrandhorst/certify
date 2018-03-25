@@ -1,4 +1,4 @@
-package certbot_test
+package certify_test
 
 import (
 	"bytes"
@@ -23,9 +23,9 @@ import (
 	"github.com/ory/dockertest"
 )
 
-func TestCertBot(t *testing.T) {
+func TestCertify(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CertBot Suite")
+	RunSpecs(t, "Certify Suite")
 }
 
 var (
@@ -167,7 +167,7 @@ func generateCertAndKey(SAN string, IPSAN net.IP) ([]byte, []byte, error) {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName: "CertBot Test Cert",
+			CommonName: "Certify Test Cert",
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
