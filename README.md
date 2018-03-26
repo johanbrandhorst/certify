@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certify)](https://goreportcard.com/report/github.com/johanbrandhorst/certify)
 
 Certify allows easy automatic certificate distribution and maintenance.
-Certificates are requested as TLS connectoins
+Certificates are requested as TLS connections
 are made, courtesy of the `GetCertificate` and `GetClientCertificate`
 `tls.Config` hooks. Certificates are optionally cached.
 
