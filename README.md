@@ -1,4 +1,5 @@
 # Certify
+[![pipeline status](https://gitlab.com/jbrandhorst/certify/badges/master/pipeline.svg)](https://gitlab.com/jbrandhorst/certify/commits/master)
 [![GoDoc](https://godoc.org/github.com/johanbrandhorst/certify?status.svg)](https://godoc.org/github.com/johanbrandhorst/certify)
 [![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certify)](https://goreportcard.com/report/github.com/johanbrandhorst/certify)
 
