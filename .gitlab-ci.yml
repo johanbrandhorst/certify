@@ -1,0 +1,35 @@
+image: golang:latest
+
+stages:
+  - build
+  - test
+
+before_script:
+  # Go requires the gopath to be setup
+  - mkdir -p /go/src/github.com/johanbrandhorst/
+  - cd /go/src/github.com/johanbrandhorst/
+  - cp -r ${CI_PROJECT_DIR} certify
+  - cd certify
+
+build:
+  stage: build
+  script:
+    - go build ./...
+
+vendor:
+  stage: test
+  script:
+    - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+    - dep ensure -v
+    - git diff --exit-code
+
+test:
+  stage: test
+  services:
+    - docker:dind
+  variables:
+    # Necessary to get dockertest to use Docker-in-Docker
+    DOCKER_HOST: "tcp://docker:2375"
+  script:
+    - go get -u github.com/onsi/ginkgo/ginkgo
+    - ginkgo -v -r --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements

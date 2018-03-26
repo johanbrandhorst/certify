@@ -23,12 +23,6 @@
   revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
 
 [[projects]]
-  name = "github.com/cenk/backoff"
-  packages = ["."]
-  revision = "61153c768f31ee5f130071d08fc82b85208528de"
-  version = "v1.1.0"
-
-[[projects]]
   name = "github.com/cenkalti/backoff"
   packages = ["."]
   revision = "61153c768f31ee5f130071d08fc82b85208528de"
@@ -393,6 +387,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ddbd5cd1089baf06d852e605308919cc96ecbcb0e241992d3d94850e15fd6080"
+  inputs-digest = "74de261120c06be5d8751ba0dcfae0c03d131957697640701c2e72af40232aa7"
   solver-name = "gps-cdcl"
   solver-version = 1
