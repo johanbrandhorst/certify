@@ -22,6 +22,14 @@ import (
 
 //go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
 
+func mustMakeTempDir() string {
+	n, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
 var _ = Describe("Certify", func() {
 	var issuer certify.Issuer
 
@@ -148,72 +156,77 @@ var _ = Describe("Certify", func() {
 })
 
 var _ = Describe("The Cache", func() {
-	var c certify.Cache
+	caches := []struct {
+		Type  string
+		Cache certify.Cache
+	}{
+		{Type: "MemCache", Cache: certify.NewMemCache()},
+		{Type: "DirCache", Cache: certify.DirCache(mustMakeTempDir())},
+	}
 
-	Context("when using the memcache", func() {
-		BeforeEach(func() {
-			c = certify.NewMemCache()
-		})
+	for _, cache := range caches {
+		c := cache
+		Context("when using a "+c.Type, func() {
+			Context("after putting in a certificate", func() {
+				It("allows a user to get and delete it", func() {
+					cert := &tls.Certificate{
+						Leaf: &x509.Certificate{
+							IsCA: true,
+						},
+					}
+					Expect(c.Cache.Put(context.Background(), "key1", cert)).To(Succeed())
+					Expect(c.Cache.Get(context.Background(), "key1")).To(Equal(cert))
+					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
+					_, err := c.Cache.Get(context.Background(), "key1")
+					Expect(err).To(Equal(certify.ErrCacheMiss))
+				})
+			})
 
-		Context("after putting in a certificate", func() {
-			It("allows a user to get and delete it", func() {
-				cert := &tls.Certificate{
-					Leaf: &x509.Certificate{
-						IsCA: true,
-					},
-				}
-				Expect(c.Put(context.Background(), "key1", cert)).To(Succeed())
-				Expect(c.Get(context.Background(), "key1")).To(Equal(cert))
-				Expect(c.Delete(context.Background(), "key1")).To(Succeed())
-				_, err := c.Get(context.Background(), "key1")
-				Expect(err).To(Equal(certify.ErrCacheMiss))
+			Context("when getting a key that doesn't exist", func() {
+				It("returns ErrCacheMiss", func() {
+					_, err := c.Cache.Get(context.Background(), "key1")
+					Expect(err).To(Equal(certify.ErrCacheMiss))
+				})
+			})
+
+			Context("when deleting a key that doesn't exist", func() {
+				It("does not return an error", func() {
+					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
+				})
+			})
+
+			Context("when accessing the cache concurrently", func() {
+				It("does not cause any race conditions", func() {
+					start := make(chan struct{})
+					wg := sync.WaitGroup{}
+					key := "key1"
+
+					cert := &tls.Certificate{
+						Leaf: &x509.Certificate{
+							IsCA: true,
+						},
+					}
+
+					for i := 0; i < 3; i++ {
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							defer GinkgoRecover()
+
+							Eventually(start).Should(BeClosed())
+							Expect(c.Cache.Delete(context.Background(), key)).To(Succeed())
+							Expect(c.Cache.Put(context.Background(), key, cert)).To(Succeed())
+							Expect(c.Cache.Get(context.Background(), key)).NotTo(BeNil())
+						}()
+					}
+
+					// Synchronize goroutines
+					close(start)
+					wg.Wait()
+				})
 			})
 		})
-
-		Context("when getting a key that doesn't exist", func() {
-			It("returns ErrCacheMiss", func() {
-				_, err := c.Get(context.Background(), "key1")
-				Expect(err).To(Equal(certify.ErrCacheMiss))
-			})
-		})
-
-		Context("when deleting a key that doesn't exist", func() {
-			It("does not return an error", func() {
-				Expect(c.Delete(context.Background(), "key1")).To(Succeed())
-			})
-		})
-
-		Context("when accessing the cache concurrently", func() {
-			It("does not cause any race conditions", func() {
-				start := make(chan struct{})
-				wg := sync.WaitGroup{}
-				key := "key1"
-
-				cert := &tls.Certificate{
-					Leaf: &x509.Certificate{
-						IsCA: true,
-					},
-				}
-
-				for i := 0; i < 3; i++ {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						defer GinkgoRecover()
-
-						Eventually(start).Should(BeClosed())
-						Expect(c.Delete(context.Background(), key)).To(Succeed())
-						Expect(c.Put(context.Background(), key, cert)).To(Succeed())
-						Expect(c.Get(context.Background(), key)).NotTo(BeNil())
-					}()
-				}
-
-				// Synchronize goroutines
-				close(start)
-				wg.Wait()
-			})
-		})
-	})
+	}
 })
 
 type backend struct{}
