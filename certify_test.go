@@ -214,7 +214,6 @@ var _ = Describe("The Cache", func() {
 							defer GinkgoRecover()
 
 							Eventually(start).Should(BeClosed())
-							Expect(c.Cache.Delete(context.Background(), key)).To(Succeed())
 							Expect(c.Cache.Put(context.Background(), key, cert)).To(Succeed())
 							Expect(c.Cache.Get(context.Background(), key)).NotTo(BeNil())
 						}()
@@ -223,6 +222,8 @@ var _ = Describe("The Cache", func() {
 					// Synchronize goroutines
 					close(start)
 					wg.Wait()
+
+					Expect(c.Cache.Delete(context.Background(), key)).To(Succeed())
 				})
 			})
 		})
