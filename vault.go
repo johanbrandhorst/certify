@@ -57,7 +57,7 @@ func connect(
 
 	dl, ok := ctx.Deadline()
 	if ok {
-		vConf.Timeout = dl.Sub(time.Now())
+		vConf.Timeout = time.Until(dl)
 	}
 	vConf.Address = vaultURL.String()
 	cli, err := api.NewClient(vConf)
