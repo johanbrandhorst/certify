@@ -71,7 +71,7 @@ var _ = Describe("Certify", func() {
 			Expect(cert1.Leaf.IPAddresses).To(HaveLen(1))
 			Expect(cert1.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
 			Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-			Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 2*time.Second))
+			Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
 			Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
 
 			cert2, err := cli.GetClientCertificate(nil)
@@ -84,7 +84,7 @@ var _ = Describe("Certify", func() {
 			Expect(cert2.Leaf.IPAddresses).To(HaveLen(1))
 			Expect(cert2.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
 			Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-			Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 2*time.Second))
+			Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
 			Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
 		})
 
@@ -136,7 +136,7 @@ var _ = Describe("Certify", func() {
 					Expect(cert1.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
 					Expect(cert1.Leaf.DNSNames).To(ConsistOf(cli.CommonName))
 					Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-					Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 2*time.Second))
+					Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
 					Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
 
 					cert2, err := cli.GetClientCertificate(nil)
@@ -147,7 +147,7 @@ var _ = Describe("Certify", func() {
 					Expect(cert2.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
 					Expect(cert2.Leaf.DNSNames).To(Equal(append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName)))
 					Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-					Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 2*time.Second))
+					Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
 					Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
 				})
 			})
