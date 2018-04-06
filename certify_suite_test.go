@@ -28,20 +28,23 @@ func TestCertify(t *testing.T) {
 	RunSpecs(t, "Certify Suite")
 }
 
+type vaultConfig struct {
+	Role        string
+	Token       string
+	URL         *url.URL
+	CA          *x509.Certificate
+	HTTPCertPEM []byte
+}
+
 var (
-	pool           *dockertest.Pool
-	vaultContainer *dockertest.Resource
-	vaultURL       *url.URL
-	rootToken      string
-	testRole       string
-	wait           docker.CloseWaiter
-	httpCertPEM    []byte
-	caCert         *x509.Certificate
+	pool      *dockertest.Pool
+	resources []*dockertest.Resource
+	waiters   []docker.CloseWaiter
+
+	vaultConf vaultConfig
 )
 
 var _ = BeforeSuite(func() {
-	rootToken = "mysecrettoken"
-	testRole = "test"
 	host := "localhost"
 	if os.Getenv("DOCKER_HOST") != "" {
 		u, err := url.Parse(os.Getenv("DOCKER_HOST"))
@@ -50,9 +53,7 @@ var _ = BeforeSuite(func() {
 		Expect(err).To(Succeed())
 	}
 
-	var key []byte
-	var err error
-	httpCertPEM, key, err = generateCertAndKey(host, net.IPv4(127, 0, 0, 1))
+	cert, key, err := generateCertAndKey(host, net.IPv4(127, 0, 0, 1))
 	Expect(err).To(Succeed())
 
 	b := &bytes.Buffer{}
@@ -60,9 +61,9 @@ var _ = BeforeSuite(func() {
 	Expect(archive.WriteHeader(&tar.Header{
 		Name: "/cert.pem",
 		Mode: 0644,
-		Size: int64(len(httpCertPEM)),
+		Size: int64(len(cert)),
 	})).To(Succeed())
-	Expect(archive.Write(httpCertPEM)).To(Equal(len(httpCertPEM)))
+	Expect(archive.Write(cert)).To(Equal(len(cert)))
 	Expect(archive.WriteHeader(&tar.Header{
 		Name: "/key.pem",
 		Mode: 0644,
@@ -71,10 +72,15 @@ var _ = BeforeSuite(func() {
 	Expect(archive.Write(key)).To(Equal(len(key)))
 	Expect(archive.Close()).To(Succeed())
 
+	pool, err = dockertest.NewPool("")
+	Expect(err).To(Succeed())
+
 	By("Starting the Vault container", func() {
-		var err error
-		pool, err = dockertest.NewPool("")
-		Expect(err).To(Succeed())
+		vaultConf = vaultConfig{
+			Token:       "mysecrettoken",
+			Role:        "test",
+			HTTPCertPEM: cert,
+		}
 
 		_, err = pool.Client.InspectImage("vault:latest")
 		if err != nil {
@@ -90,7 +96,7 @@ var _ = BeforeSuite(func() {
 			Config: &docker.Config{
 				Image: "vault:latest",
 				Env: []string{
-					"VAULT_DEV_ROOT_TOKEN_ID=" + rootToken,
+					"VAULT_DEV_ROOT_TOKEN_ID=" + vaultConf.Token,
 					`VAULT_LOCAL_CONFIG={
 						"default_lease_ttl": "168h",
 						"max_lease_ttl": "720h",
@@ -119,9 +125,6 @@ var _ = BeforeSuite(func() {
 			},
 		})
 		Expect(err).To(Succeed())
-		vaultContainer = &dockertest.Resource{
-			Container: c,
-		}
 
 		Expect(pool.Client.UploadToContainer(c.ID, docker.UploadToContainerOptions{
 			InputStream: b,
@@ -130,11 +133,11 @@ var _ = BeforeSuite(func() {
 
 		Expect(pool.Client.StartContainer(c.ID, nil)).To(Succeed())
 
-		vaultContainer.Container, err = pool.Client.InspectContainer(c.ID)
+		c, err = pool.Client.InspectContainer(c.ID)
 		Expect(err).To(Succeed())
 
-		wait, err = pool.Client.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
-			Container:    vaultContainer.Container.ID,
+		wait, err := pool.Client.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
+			Container:    c.ID,
 			OutputStream: GinkgoWriter,
 			ErrorStream:  GinkgoWriter,
 			Stderr:       true,
@@ -143,18 +146,20 @@ var _ = BeforeSuite(func() {
 		})
 		Expect(err).To(Succeed())
 
-		vaultURL = &url.URL{
+		waiters = append(waiters, wait)
+
+		resources = append(resources, &dockertest.Resource{Container: c})
+
+		vaultConf.URL = &url.URL{
 			Scheme: "https",
 			Host:   net.JoinHostPort(host, "8201"),
 		}
-	})
 
-	By("Mounting the PKI backend and creating the role", func() {
 		conf := api.DefaultConfig()
 		conf.Address = "http://" + net.JoinHostPort(host, "8200")
 		cli, err := api.NewClient(conf)
 		Expect(err).To(Succeed())
-		cli.SetToken(rootToken)
+		cli.SetToken(vaultConf.Token)
 
 		Expect(pool.Retry(func() error {
 			_, err := cli.Logical().Read("pki/certs")
@@ -170,16 +175,16 @@ var _ = BeforeSuite(func() {
 		resp, err := cli.Logical().Write("pki/root/generate/internal", map[string]interface{}{
 			"ttl":         "87600h",
 			"common_name": "my_vault",
-			"ip_sans":     vaultContainer.Container.NetworkSettings.IPAddress,
+			"ip_sans":     c.NetworkSettings.IPAddress,
 			"format":      "der",
 		})
 		Expect(err).To(Succeed())
 		caCertDER, err := base64.StdEncoding.DecodeString(resp.Data["certificate"].(string))
 		Expect(err).To(Succeed())
-		caCert, err = x509.ParseCertificate(caCertDER)
+		vaultConf.CA, err = x509.ParseCertificate(caCertDER)
 		Expect(err).To(Succeed())
 
-		_, err = cli.Logical().Write("pki/roles/"+testRole, map[string]interface{}{
+		_, err = cli.Logical().Write("pki/roles/"+vaultConf.Role, map[string]interface{}{
 			"allowed_domains":  "myserver.com",
 			"allow_subdomains": true,
 			"allow_any_name":   true,
@@ -189,11 +194,13 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	for _, waiter := range waiters {
+		Expect(waiter.Close()).To(Succeed())
+		Expect(waiter.Wait()).To(Succeed())
+	}
 	if pool != nil {
-		if vaultContainer != nil {
-			Expect(wait.Close()).To(Succeed())
-			Expect(wait.Wait()).To(Succeed())
-			Expect(pool.Purge(vaultContainer)).To(Succeed())
+		for _, resource := range resources {
+			Expect(pool.Purge(resource)).To(Succeed())
 		}
 	}
 })
