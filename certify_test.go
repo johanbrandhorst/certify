@@ -36,11 +36,11 @@ var _ = Describe("Certify", func() {
 	Context("when using a Vault Issuer", func() {
 		BeforeEach(func() {
 			cp := x509.NewCertPool()
-			Expect(cp.AppendCertsFromPEM(httpCertPEM)).To(BeTrue())
+			Expect(cp.AppendCertsFromPEM(vaultConf.HTTPCertPEM)).To(BeTrue())
 			iss := &certify.VaultIssuer{
-				VaultURL: vaultURL,
-				Token:    rootToken,
-				Role:     testRole,
+				VaultURL: vaultConf.URL,
+				Token:    vaultConf.Token,
+				Role:     vaultConf.Role,
 				TLSConfig: &tls.Config{
 					RootCAs: cp,
 				},
@@ -72,7 +72,7 @@ var _ = Describe("Certify", func() {
 			Expect(cert1.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
 			Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
-			Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
+			Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
 			cert2, err := cli.GetClientCertificate(nil)
 			Expect(err).To(Succeed())
@@ -85,7 +85,7 @@ var _ = Describe("Certify", func() {
 			Expect(cert2.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
 			Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
-			Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
+			Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 		})
 
 		Context("when there is a matching certificate in the cache", func() {
@@ -106,7 +106,7 @@ var _ = Describe("Certify", func() {
 				Expect(cert1.Leaf.DNSNames).To(ConsistOf(cli.CommonName))
 				Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 				Expect(cert1.Leaf.NotAfter).To(BeTemporally(">", time.Now()))
-				Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
+				Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
 				cert2, err := cli.GetClientCertificate(nil)
 				Expect(err).To(Succeed())
@@ -137,7 +137,7 @@ var _ = Describe("Certify", func() {
 					Expect(cert1.Leaf.DNSNames).To(ConsistOf(cli.CommonName))
 					Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 					Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
-					Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
+					Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
 					cert2, err := cli.GetClientCertificate(nil)
 					Expect(err).To(Succeed())
@@ -148,7 +148,7 @@ var _ = Describe("Certify", func() {
 					Expect(cert2.Leaf.DNSNames).To(Equal(append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName)))
 					Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 					Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
-					Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(caCert.Subject.SerialNumber))
+					Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 				})
 			})
 		})
@@ -257,13 +257,13 @@ var _ = Describe("gRPC Test", func() {
 			var cli proto.TestClient
 			By("Creating the Certify", func() {
 				cp := x509.NewCertPool()
-				Expect(cp.AppendCertsFromPEM(httpCertPEM)).To(BeTrue())
+				Expect(cp.AppendCertsFromPEM(vaultConf.HTTPCertPEM)).To(BeTrue())
 				cb = &certify.Certify{
 					CommonName: "Certify",
 					Issuer: &certify.VaultIssuer{
-						VaultURL: vaultURL,
-						Token:    rootToken,
-						Role:     testRole,
+						VaultURL: vaultConf.URL,
+						Token:    vaultConf.Token,
+						Role:     vaultConf.Role,
 						TLSConfig: &tls.Config{
 							RootCAs: cp,
 						},
@@ -281,7 +281,7 @@ var _ = Describe("gRPC Test", func() {
 				Expect(err).To(Succeed())
 
 				cp := x509.NewCertPool()
-				cp.AddCert(caCert)
+				cp.AddCert(vaultConf.CA)
 				tlsConfig := &tls.Config{
 					GetCertificate: cb.GetCertificate,
 					ClientCAs:      cp,
@@ -298,7 +298,7 @@ var _ = Describe("gRPC Test", func() {
 
 			By("Creating the client", func() {
 				cp := x509.NewCertPool()
-				cp.AddCert(caCert)
+				cp.AddCert(vaultConf.CA)
 				tlsConfig := &tls.Config{
 					GetClientCertificate: cb.GetClientCertificate,
 					RootCAs:              cp,
