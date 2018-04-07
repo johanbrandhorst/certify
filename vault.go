@@ -33,6 +33,12 @@ type VaultIssuer struct {
 	// TLSConfig allows configuration of the TLS config
 	// used when connecting to the Vault server.
 	TLSConfig *tls.Config
+	// TimeToLive configures the lifetime of certificates
+	// requested from the Vault server.
+	TimeToLive time.Duration
+	// OtherSubjectAlternativeNames defines custom OID/UTF8-string SANs.
+	// The format is the same as OpenSSL: <oid>;<type>:<value> where the only current valid type is UTF8.
+	OtherSubjectAlternativeNames []string
 
 	cli *api.Client
 }
@@ -77,7 +83,7 @@ func (v *VaultIssuer) Connect(ctx context.Context) error {
 	return err
 }
 
-// Issue issues a certificate from one of the configured Vault backends,
+// Issue issues a certificate from the configured Vault backend,
 // establishing a connection if one doesn't already exist.
 func (v *VaultIssuer) Issue(ctx context.Context, commonName string, conf *CertConfig) (*tls.Certificate, error) {
 	if v.cli == nil {
@@ -108,14 +114,14 @@ func (v *VaultIssuer) Issue(ctx context.Context, commonName string, conf *CertCo
 			}
 			opts["ip_sans"] = strings.Join(ips, ",")
 		}
+	}
 
-		if len(conf.OtherSubjectAlternativeNames) > 0 {
-			opts["other_alt_names"] = strings.Join(conf.OtherSubjectAlternativeNames, ",")
-		}
+	if len(v.OtherSubjectAlternativeNames) > 0 {
+		opts["other_alt_names"] = strings.Join(v.OtherSubjectAlternativeNames, ",")
+	}
 
-		if conf.TimeToLive > 0 {
-			opts["ttl"] = conf.TimeToLive.String()
-		}
+	if v.TimeToLive > 0 {
+		opts["ttl"] = v.TimeToLive.String()
 	}
 
 	secret, err := v.cli.Logical().Write("pki/issue/"+v.Role, opts)
