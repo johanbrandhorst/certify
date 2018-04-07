@@ -34,19 +34,17 @@ var _ = Describe("Certify", func() {
 	var issuer certify.Issuer
 
 	Context("when using a Vault Issuer", func() {
+		var issuer *certify.VaultIssuer
 		BeforeEach(func() {
-			cp := x509.NewCertPool()
-			Expect(cp.AppendCertsFromPEM(vaultConf.HTTPCertPEM)).To(BeTrue())
-			iss := &certify.VaultIssuer{
+			issuer = &certify.VaultIssuer{
 				VaultURL: vaultConf.URL,
 				Token:    vaultConf.Token,
 				Role:     vaultConf.Role,
 				TLSConfig: &tls.Config{
-					RootCAs: cp,
+					RootCAs: vaultConf.CertPool,
 				},
+				TimeToLive: time.Minute * 10,
 			}
-			Expect(iss.Connect(context.Background())).To(Succeed())
-			issuer = iss
 		})
 
 		It("issues a valid certificate", func() {
@@ -54,7 +52,6 @@ var _ = Describe("Certify", func() {
 				CommonName: "myserver.com",
 				Issuer:     issuer,
 				CertConfig: &certify.CertConfig{
-					TimeToLive:                time.Minute * 10,
 					SubjectAlternativeNames:   []string{"extraname.com"},
 					IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
 				},
@@ -71,7 +68,7 @@ var _ = Describe("Certify", func() {
 			Expect(cert1.Leaf.IPAddresses).To(HaveLen(1))
 			Expect(cert1.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
 			Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-			Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
+			Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
 			Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
 			cert2, err := cli.GetClientCertificate(nil)
@@ -84,7 +81,7 @@ var _ = Describe("Certify", func() {
 			Expect(cert2.Leaf.IPAddresses).To(HaveLen(1))
 			Expect(cert2.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
 			Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-			Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
+			Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
 			Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 		})
 
@@ -115,16 +112,14 @@ var _ = Describe("Certify", func() {
 
 			Context("but the certificate expiry is within the RenewThreshold", func() {
 				It("requests a new certificate", func() {
+					// Create certs with lower TTL than RenewThreshold
+					// to force renewal every time.
+					issuer.TimeToLive = 30 * time.Minute
 					cli := &certify.Certify{
 						CommonName:     "myserver.com",
 						Issuer:         issuer,
 						Cache:          certify.NewMemCache(),
 						RenewThreshold: time.Hour,
-						CertConfig: &certify.CertConfig{
-							// Create certs with lower TTL than RenewThreshold
-							// to force renewal every time.
-							TimeToLive: 30 * time.Minute,
-						},
 					}
 
 					cert1, err := cli.GetCertificate(&tls.ClientHelloInfo{
@@ -136,7 +131,7 @@ var _ = Describe("Certify", func() {
 					Expect(cert1.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
 					Expect(cert1.Leaf.DNSNames).To(ConsistOf(cli.CommonName))
 					Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-					Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
+					Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
 					Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
 					cert2, err := cli.GetClientCertificate(nil)
@@ -145,9 +140,8 @@ var _ = Describe("Certify", func() {
 					Expect(cert1).NotTo(Equal(cert2))
 					Expect(cert2.Leaf).NotTo(BeNil())
 					Expect(cert2.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
-					Expect(cert2.Leaf.DNSNames).To(Equal(append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName)))
 					Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-					Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(cli.CertConfig.TimeToLive), 5*time.Second))
+					Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
 					Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 				})
 			})
@@ -256,8 +250,6 @@ var _ = Describe("gRPC Test", func() {
 			var lis net.Listener
 			var cli proto.TestClient
 			By("Creating the Certify", func() {
-				cp := x509.NewCertPool()
-				Expect(cp.AppendCertsFromPEM(vaultConf.HTTPCertPEM)).To(BeTrue())
 				cb = &certify.Certify{
 					CommonName: "Certify",
 					Issuer: &certify.VaultIssuer{
@@ -265,7 +257,7 @@ var _ = Describe("gRPC Test", func() {
 						Token:    vaultConf.Token,
 						Role:     vaultConf.Role,
 						TLSConfig: &tls.Config{
-							RootCAs: cp,
+							RootCAs: vaultConf.CertPool,
 						},
 					},
 					Cache:          certify.NewMemCache(),

@@ -29,11 +29,11 @@ func TestCertify(t *testing.T) {
 }
 
 type vaultConfig struct {
-	Role        string
-	Token       string
-	URL         *url.URL
-	CA          *x509.Certificate
-	HTTPCertPEM []byte
+	Role     string
+	Token    string
+	URL      *url.URL
+	CA       *x509.Certificate
+	CertPool *x509.CertPool
 }
 
 var (
@@ -76,10 +76,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(Succeed())
 
 	By("Starting the Vault container", func() {
+		cp := x509.NewCertPool()
+		Expect(cp.AppendCertsFromPEM(cert)).To(BeTrue())
 		vaultConf = vaultConfig{
-			Token:       "mysecrettoken",
-			Role:        "test",
-			HTTPCertPEM: cert,
+			Token:    "mysecrettoken",
+			Role:     "test",
+			CertPool: cp,
 		}
 
 		_, err = pool.Client.InspectImage("vault:latest")
@@ -198,10 +200,8 @@ var _ = AfterSuite(func() {
 		Expect(waiter.Close()).To(Succeed())
 		Expect(waiter.Wait()).To(Succeed())
 	}
-	if pool != nil {
-		for _, resource := range resources {
-			Expect(pool.Purge(resource)).To(Succeed())
-		}
+	for _, resource := range resources {
+		Expect(pool.Purge(resource)).To(Succeed())
 	}
 })
 
