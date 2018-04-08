@@ -29,6 +29,27 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/cloudflare/cfssl"
+  packages = [
+    "api",
+    "api/client",
+    "auth",
+    "certdb",
+    "config",
+    "crypto/pkcs7",
+    "csr",
+    "errors",
+    "helpers",
+    "helpers/derhelpers",
+    "info",
+    "log",
+    "ocsp/config",
+    "signer"
+  ]
+  revision = "5d63dbd981b5c408effbb58c442d54761ff94fbd"
+  version = "1.3.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
@@ -113,6 +134,17 @@
   name = "github.com/golang/snappy"
   packages = ["."]
   revision = "553a641470496b2327abcac10b36396bd98e45c9"
+
+[[projects]]
+  name = "github.com/google/certificate-transparency-go"
+  packages = [
+    ".",
+    "asn1",
+    "tls",
+    "x509",
+    "x509/pkix"
+  ]
+  revision = "5ab67e519c93568ac3ee50fd6772a5bcf8aa460d"
 
 [[projects]]
   branch = "master"
@@ -279,7 +311,14 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "cryptobyte",
+    "cryptobyte/asn1",
+    "ocsp",
+    "pkcs12",
+    "pkcs12/internal/rc2",
+    "ssh/terminal"
+  ]
   revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
 
 [[projects]]
@@ -387,6 +426,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "74de261120c06be5d8751ba0dcfae0c03d131957697640701c2e72af40232aa7"
+  inputs-digest = "0251b021cedde18362b36b57ad0b95a68d64ce5745ccc0a2e9e4d849b6699cd5"
   solver-name = "gps-cdcl"
   solver-version = 1

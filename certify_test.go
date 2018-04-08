@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloudflare/cfssl/auth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
@@ -22,17 +23,200 @@ import (
 
 //go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
 
-func mustMakeTempDir() string {
-	n, err := ioutil.TempDir("", "")
-	if err != nil {
-		panic(err)
+var _ = Describe("Issuers", func() {
+	issuers := []struct {
+		Type     string
+		IssuerFn func() certify.Issuer
+	}{
+		{Type: "Vault", IssuerFn: func() certify.Issuer {
+			return &certify.VaultIssuer{
+				VaultURL: vaultConf.URL,
+				Token:    vaultConf.Token,
+				Role:     vaultConf.Role,
+				TLSConfig: &tls.Config{
+					RootCAs: vaultConf.CertPool,
+				},
+				TimeToLive: time.Minute * 10,
+				// No idea how to format this. Copied from
+				// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
+				OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
+			}
+		}},
+		{Type: "CFSSL", IssuerFn: func() certify.Issuer {
+			return &certify.CFSSLIssuer{
+				URL: cfsslConf.URL,
+				TLSConfig: &tls.Config{
+					RootCAs:            cfsslConf.CertPool,
+					InsecureSkipVerify: true,
+				},
+			}
+		}},
+		{Type: "authenticated CFSSL", IssuerFn: func() certify.Issuer {
+			st, err := auth.New(cfsslConf.AuthKey, nil)
+			Expect(err).To(Succeed())
+			return &certify.CFSSLIssuer{
+				URL: cfsslConf.URL,
+				TLSConfig: &tls.Config{
+					RootCAs:            cfsslConf.CertPool,
+					InsecureSkipVerify: true,
+				},
+				Auth:    st,
+				Profile: cfsslConf.Profile,
+			}
+		}},
 	}
-	return n
-}
+
+	for _, issuer := range issuers {
+		issuer := issuer
+		var iss certify.Issuer
+
+		BeforeEach(func() {
+			iss = issuer.IssuerFn()
+		})
+
+		Context("when using "+issuer.Type, func() {
+			It("issues a certificate", func() {
+				cn := "somename.com"
+
+				tlsCert, err := iss.Issue(context.Background(), cn, nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+				Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+				// Check that chain is included
+				Expect(tlsCert.Certificate).To(HaveLen(2))
+				caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+				Expect(err).NotTo(HaveOccurred())
+				Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+				if vIss, ok := iss.(*certify.VaultIssuer); ok {
+					Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+					Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(vIss.TimeToLive), 5*time.Second))
+				}
+			})
+
+			Context("when specifying some SANs, IPSANs and OtherSANs", func() {
+				It("issues a certificate with the SANs and IPSANs", func() {
+					conf := &certify.CertConfig{
+						SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
+						IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
+					}
+					cn := "somename.com"
+
+					tlsCert, err := iss.Issue(context.Background(), cn, conf)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+					Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+					Expect(tlsCert.Leaf.DNSNames).To(Equal(conf.SubjectAlternativeNames))
+					Expect(tlsCert.Leaf.IPAddresses).To(HaveLen(len(conf.IPSubjectAlternativeNames)))
+					for i, ip := range tlsCert.Leaf.IPAddresses {
+						Expect(ip.Equal(conf.IPSubjectAlternativeNames[i])).To(BeTrue())
+					}
+
+					// Check that chain is included
+					Expect(tlsCert.Certificate).To(HaveLen(2))
+					caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+					Expect(err).NotTo(HaveOccurred())
+					Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+					if vIss, ok := iss.(*certify.VaultIssuer); ok {
+						Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+						Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(vIss.TimeToLive), 5*time.Second))
+					}
+				})
+			})
+		})
+	}
+})
+
+var _ = Describe("Caches", func() {
+	// Note: this setup step doesn't clean
+	// up this directory properly after running.
+	mustMakeTempDir := func() string {
+		n, err := ioutil.TempDir("", "")
+		if err != nil {
+			panic(err)
+		}
+		return n
+	}
+
+	caches := []struct {
+		Type  string
+		Cache certify.Cache
+	}{
+		{Type: "MemCache", Cache: certify.NewMemCache()},
+		{Type: "DirCache", Cache: certify.DirCache(mustMakeTempDir())},
+	}
+
+	for _, cache := range caches {
+		c := cache
+		Context("when using "+c.Type, func() {
+			Context("after putting in a certificate", func() {
+				It("allows a user to get and delete it", func() {
+					cert := &tls.Certificate{
+						Leaf: &x509.Certificate{
+							IsCA: true,
+						},
+					}
+					Expect(c.Cache.Put(context.Background(), "key1", cert)).To(Succeed())
+					Expect(c.Cache.Get(context.Background(), "key1")).To(Equal(cert))
+					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
+					_, err := c.Cache.Get(context.Background(), "key1")
+					Expect(err).To(Equal(certify.ErrCacheMiss))
+				})
+			})
+
+			Context("when getting a key that doesn't exist", func() {
+				It("returns ErrCacheMiss", func() {
+					_, err := c.Cache.Get(context.Background(), "key1")
+					Expect(err).To(Equal(certify.ErrCacheMiss))
+				})
+			})
+
+			Context("when deleting a key that doesn't exist", func() {
+				It("does not return an error", func() {
+					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
+				})
+			})
+
+			Context("when accessing the cache concurrently", func() {
+				It("does not cause any race conditions", func() {
+					start := make(chan struct{})
+					wg := sync.WaitGroup{}
+					key := "key1"
+
+					cert := &tls.Certificate{
+						Leaf: &x509.Certificate{
+							IsCA: true,
+						},
+					}
+
+					for i := 0; i < 3; i++ {
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							defer GinkgoRecover()
+
+							Eventually(start).Should(BeClosed())
+							Expect(c.Cache.Put(context.Background(), key, cert)).To(Succeed())
+							Expect(c.Cache.Get(context.Background(), key)).NotTo(BeNil())
+						}()
+					}
+
+					// Synchronize goroutines
+					close(start)
+					wg.Wait()
+
+					Expect(c.Cache.Delete(context.Background(), key)).To(Succeed())
+				})
+			})
+		})
+	}
+})
 
 var _ = Describe("Certify", func() {
-	var issuer certify.Issuer
-
 	Context("when using a Vault Issuer", func() {
 		var issuer *certify.VaultIssuer
 		BeforeEach(func() {
@@ -147,81 +331,6 @@ var _ = Describe("Certify", func() {
 			})
 		})
 	})
-})
-
-var _ = Describe("The Cache", func() {
-	caches := []struct {
-		Type  string
-		Cache certify.Cache
-	}{
-		{Type: "MemCache", Cache: certify.NewMemCache()},
-		{Type: "DirCache", Cache: certify.DirCache(mustMakeTempDir())},
-	}
-
-	for _, cache := range caches {
-		c := cache
-		Context("when using a "+c.Type, func() {
-			Context("after putting in a certificate", func() {
-				It("allows a user to get and delete it", func() {
-					cert := &tls.Certificate{
-						Leaf: &x509.Certificate{
-							IsCA: true,
-						},
-					}
-					Expect(c.Cache.Put(context.Background(), "key1", cert)).To(Succeed())
-					Expect(c.Cache.Get(context.Background(), "key1")).To(Equal(cert))
-					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
-					_, err := c.Cache.Get(context.Background(), "key1")
-					Expect(err).To(Equal(certify.ErrCacheMiss))
-				})
-			})
-
-			Context("when getting a key that doesn't exist", func() {
-				It("returns ErrCacheMiss", func() {
-					_, err := c.Cache.Get(context.Background(), "key1")
-					Expect(err).To(Equal(certify.ErrCacheMiss))
-				})
-			})
-
-			Context("when deleting a key that doesn't exist", func() {
-				It("does not return an error", func() {
-					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
-				})
-			})
-
-			Context("when accessing the cache concurrently", func() {
-				It("does not cause any race conditions", func() {
-					start := make(chan struct{})
-					wg := sync.WaitGroup{}
-					key := "key1"
-
-					cert := &tls.Certificate{
-						Leaf: &x509.Certificate{
-							IsCA: true,
-						},
-					}
-
-					for i := 0; i < 3; i++ {
-						wg.Add(1)
-						go func() {
-							defer wg.Done()
-							defer GinkgoRecover()
-
-							Eventually(start).Should(BeClosed())
-							Expect(c.Cache.Put(context.Background(), key, cert)).To(Succeed())
-							Expect(c.Cache.Get(context.Background(), key)).NotTo(BeNil())
-						}()
-					}
-
-					// Synchronize goroutines
-					close(start)
-					wg.Wait()
-
-					Expect(c.Cache.Delete(context.Background(), key)).To(Succeed())
-				})
-			})
-		})
-	}
 })
 
 type backend struct{}
