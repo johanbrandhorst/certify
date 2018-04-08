@@ -5,9 +5,11 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"math/big"
 	"net"
@@ -16,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cloudflare/cfssl/api/client"
+	"github.com/cloudflare/cfssl/config"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/vault/api"
 	. "github.com/onsi/ginkgo"
@@ -36,12 +40,20 @@ type vaultConfig struct {
 	CertPool *x509.CertPool
 }
 
+type cfsslConfig struct {
+	URL      *url.URL
+	CertPool *x509.CertPool
+	AuthKey  string
+	Profile  string
+}
+
 var (
 	pool      *dockertest.Pool
 	resources []*dockertest.Resource
 	waiters   []docker.CloseWaiter
 
 	vaultConf vaultConfig
+	cfsslConf cfsslConfig
 )
 
 var _ = BeforeSuite(func() {
@@ -56,24 +68,10 @@ var _ = BeforeSuite(func() {
 	cert, key, err := generateCertAndKey(host, net.IPv4(127, 0, 0, 1))
 	Expect(err).To(Succeed())
 
-	b := &bytes.Buffer{}
-	archive := tar.NewWriter(b)
-	Expect(archive.WriteHeader(&tar.Header{
-		Name: "/cert.pem",
-		Mode: 0644,
-		Size: int64(len(cert)),
-	})).To(Succeed())
-	Expect(archive.Write(cert)).To(Equal(len(cert)))
-	Expect(archive.WriteHeader(&tar.Header{
-		Name: "/key.pem",
-		Mode: 0644,
-		Size: int64(len(key)),
-	})).To(Succeed())
-	Expect(archive.Write(key)).To(Equal(len(key)))
-	Expect(archive.Close()).To(Succeed())
-
 	pool, err = dockertest.NewPool("")
 	Expect(err).To(Succeed())
+
+	pool.MaxWait = time.Second * 10
 
 	By("Starting the Vault container", func() {
 		cp := x509.NewCertPool()
@@ -88,8 +86,9 @@ var _ = BeforeSuite(func() {
 		if err != nil {
 			// Pull image
 			Expect(pool.Client.PullImage(docker.PullImageOptions{
-				Repository: "vault",
-				Tag:        "latest",
+				Repository:   "vault",
+				Tag:          "latest",
+				OutputStream: GinkgoWriter,
 			}, docker.AuthConfiguration{})).To(Succeed())
 		}
 
@@ -128,6 +127,22 @@ var _ = BeforeSuite(func() {
 		})
 		Expect(err).To(Succeed())
 
+		b := &bytes.Buffer{}
+		archive := tar.NewWriter(b)
+		Expect(archive.WriteHeader(&tar.Header{
+			Name: "/cert.pem",
+			Mode: 0644,
+			Size: int64(len(cert)),
+		})).To(Succeed())
+		Expect(archive.Write(cert)).To(Equal(len(cert)))
+		Expect(archive.WriteHeader(&tar.Header{
+			Name: "/key.pem",
+			Mode: 0644,
+			Size: int64(len(key)),
+		})).To(Succeed())
+		Expect(archive.Write(key)).To(Equal(len(key)))
+		Expect(archive.Close()).To(Succeed())
+
 		Expect(pool.Client.UploadToContainer(c.ID, docker.UploadToContainerOptions{
 			InputStream: b,
 			Path:        "/vault/file/",
@@ -149,7 +164,6 @@ var _ = BeforeSuite(func() {
 		Expect(err).To(Succeed())
 
 		waiters = append(waiters, wait)
-
 		resources = append(resources, &dockertest.Resource{Container: c})
 
 		vaultConf.URL = &url.URL{
@@ -192,6 +206,132 @@ var _ = BeforeSuite(func() {
 			"allow_any_name":   true,
 		})
 		Expect(err).To(Succeed())
+	})
+
+	By("Starting the CFSSL container", func() {
+		cp := x509.NewCertPool()
+		Expect(cp.AppendCertsFromPEM(cert)).To(BeTrue())
+		cfsslConf = cfsslConfig{
+			Profile:  "authed",
+			CertPool: cp,
+		}
+		_, err = pool.Client.InspectImage("cfssl/cfssl:latest")
+		if err != nil {
+			// Pull image
+			Expect(pool.Client.PullImage(docker.PullImageOptions{
+				Repository:   "cfssl/cfssl",
+				Tag:          "latest",
+				OutputStream: GinkgoWriter,
+			}, docker.AuthConfiguration{})).To(Succeed())
+		}
+
+		c, err := pool.Client.CreateContainer(docker.CreateContainerOptions{
+			Name: "cfssl",
+			Config: &docker.Config{
+				Image: "cfssl/cfssl:latest",
+				ExposedPorts: map[docker.Port]struct{}{
+					docker.Port("8888"): struct{}{},
+				},
+				Cmd: []string{
+					"serve",
+					"-loglevel", "0",
+					"-address", "0.0.0.0",
+					"-port", "8888",
+					"-ca", "/cert.pem",
+					"-ca-key", "/key.pem",
+					"-tls-cert", "/cert.pem",
+					"-tls-key", "/key.pem",
+					"-config", "/conf.json",
+				},
+			},
+			HostConfig: &docker.HostConfig{
+				NetworkMode:     "host",
+				PublishAllPorts: true,
+				PortBindings: map[docker.Port][]docker.PortBinding{
+					"8888": []docker.PortBinding{{HostPort: "8888"}},
+				},
+			},
+		})
+		Expect(err).To(Succeed())
+
+		b := &bytes.Buffer{}
+		archive := tar.NewWriter(b)
+		Expect(archive.WriteHeader(&tar.Header{
+			Name: "/cert.pem",
+			Mode: 0644,
+			Size: int64(len(cert)),
+		})).To(Succeed())
+		Expect(archive.Write(cert)).To(Equal(len(cert)))
+		Expect(archive.WriteHeader(&tar.Header{
+			Name: "/key.pem",
+			Mode: 0644,
+			Size: int64(len(key)),
+		})).To(Succeed())
+		Expect(archive.Write(key)).To(Equal(len(key)))
+		const authKey = "testKey"
+		conf := config.Config{
+			Signing: &config.Signing{
+				Profiles: map[string]*config.SigningProfile{
+					cfsslConf.Profile: &config.SigningProfile{
+						AuthKeyName:  authKey,
+						Usage:        []string{"signing", "key encipherment", "server auth", "client auth"},
+						Expiry:       time.Hour * 8760,
+						ExpiryString: "8760h",
+					},
+				},
+				Default: config.DefaultConfig(),
+			},
+			AuthKeys: map[string]config.AuthKey{
+				authKey: config.AuthKey{
+					Type: "standard",
+					Key:  "0123456789ABCDEF0123456789ABCDEF",
+				},
+			},
+		}
+		confBytes, err := json.Marshal(&conf)
+		Expect(err).To(Succeed())
+		Expect(archive.WriteHeader(&tar.Header{
+			Name: "/conf.json",
+			Mode: 0644,
+			Size: int64(len(confBytes)),
+		})).To(Succeed())
+		Expect(archive.Write(confBytes)).To(Equal(len(confBytes)))
+		Expect(archive.Close()).To(Succeed())
+
+		Expect(pool.Client.UploadToContainer(c.ID, docker.UploadToContainerOptions{
+			InputStream: b,
+			Path:        "/",
+		})).To(Succeed())
+
+		Expect(pool.Client.StartContainer(c.ID, nil)).To(Succeed())
+
+		c, err = pool.Client.InspectContainer(c.ID)
+		Expect(err).To(Succeed())
+
+		wait, err := pool.Client.AttachToContainerNonBlocking(docker.AttachToContainerOptions{
+			Container:    c.ID,
+			OutputStream: GinkgoWriter,
+			ErrorStream:  GinkgoWriter,
+			Stderr:       true,
+			Stdout:       true,
+			Stream:       true,
+		})
+		Expect(err).To(Succeed())
+
+		waiters = append(waiters, wait)
+		resources = append(resources, &dockertest.Resource{Container: c})
+
+		cfsslConf.URL = &url.URL{
+			Scheme: "https",
+			Host:   net.JoinHostPort(host, "8888"),
+		}
+		cfsslConf.AuthKey = conf.AuthKeys[authKey].Key
+
+		remote := client.NewServerTLS(cfsslConf.URL.String(), &tls.Config{RootCAs: cp})
+		Expect(pool.Retry(func() error {
+			_, err = remote.Info([]byte(`{}`))
+			return err
+		})).To(Succeed())
 	})
 })
 
