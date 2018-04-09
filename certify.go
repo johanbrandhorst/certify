@@ -24,10 +24,10 @@ type Certify struct {
 	// Issuer is the certificate issuer to use.
 	Issuer Issuer
 
-	// RenewThreshold configures how long before
+	// RenewBefore configures how long before
 	// expiry a certificate should be considered too
 	// old to use when fetched from the cache.
-	RenewThreshold time.Duration
+	RenewBefore time.Duration
 
 	// Cache is the Cache implementation to use.
 	Cache Cache
@@ -86,7 +86,7 @@ func (c *Certify) getOrRenewCert(ctx context.Context, name string) (*tls.Certifi
 		cert, err := c.Cache.Get(ctx, name)
 		if err == nil {
 			// If we're not within the renewal threshold of the expiry, return the cert
-			if time.Now().Before(cert.Leaf.NotAfter.Add(-c.RenewThreshold)) {
+			if time.Now().Before(cert.Leaf.NotAfter.Add(-c.RenewBefore)) {
 				return cert, nil
 			}
 			// Delete the cert, we want to renew it
