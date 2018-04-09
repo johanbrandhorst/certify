@@ -23,7 +23,7 @@ Currently implemented issuers:
 Create an issuer:
 ```go
 issuer := &certify.VaultIssuer{
-    VaultURL: &url.URL{
+    URL: &url.URL{
         Scheme: "https",
         Host: "my-local-vault-instance.com"
     },

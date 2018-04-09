@@ -30,9 +30,9 @@ var _ = Describe("Issuers", func() {
 	}{
 		{Type: "Vault", IssuerFn: func() certify.Issuer {
 			return &certify.VaultIssuer{
-				VaultURL: vaultConf.URL,
-				Token:    vaultConf.Token,
-				Role:     vaultConf.Role,
+				URL:   vaultConf.URL,
+				Token: vaultConf.Token,
+				Role:  vaultConf.Role,
 				TLSConfig: &tls.Config{
 					RootCAs: vaultConf.CertPool,
 				},
@@ -221,9 +221,9 @@ var _ = Describe("Certify", func() {
 		var issuer *certify.VaultIssuer
 		BeforeEach(func() {
 			issuer = &certify.VaultIssuer{
-				VaultURL: vaultConf.URL,
-				Token:    vaultConf.Token,
-				Role:     vaultConf.Role,
+				URL:   vaultConf.URL,
+				Token: vaultConf.Token,
+				Role:  vaultConf.Role,
 				TLSConfig: &tls.Config{
 					RootCAs: vaultConf.CertPool,
 				},
@@ -362,9 +362,9 @@ var _ = Describe("gRPC Test", func() {
 				cb = &certify.Certify{
 					CommonName: "Certify",
 					Issuer: &certify.VaultIssuer{
-						VaultURL: vaultConf.URL,
-						Token:    vaultConf.Token,
-						Role:     vaultConf.Role,
+						URL:   vaultConf.URL,
+						Token: vaultConf.Token,
+						Role:  vaultConf.Role,
 						TLSConfig: &tls.Config{
 							RootCAs: vaultConf.CertPool,
 						},

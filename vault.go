@@ -16,10 +16,10 @@ import (
 // VaultIssuer implements the Issuer interface with a
 // Hashicorp Vault PKI Secrets Engine backend.
 //
-// VaultURL, Token and Role are required.
+// URL, Token and Role are required.
 type VaultIssuer struct {
-	// VaultURL is the URL of the Vault instance.
-	VaultURL *url.URL
+	// URL is the URL of the Vault instance.
+	URL *url.URL
 	// Token is the Vault secret token that should be used
 	// when issuing certificates.
 	Token string
@@ -45,13 +45,13 @@ type VaultIssuer struct {
 
 func connect(
 	ctx context.Context,
-	vaultURL *url.URL,
+	URL *url.URL,
 	role,
 	token string,
 	allowHTTP bool,
 	tlsConfig *tls.Config,
 ) (*api.Client, error) {
-	if vaultURL.Scheme != "https" && !allowHTTP {
+	if URL.Scheme != "https" && !allowHTTP {
 		return nil, errors.New("not allowing insecure transport; enable InsecureAllowHTTP if necessary")
 	}
 
@@ -65,7 +65,7 @@ func connect(
 	if ok {
 		vConf.Timeout = time.Until(dl)
 	}
-	vConf.Address = vaultURL.String()
+	vConf.Address = URL.String()
 	cli, err := api.NewClient(vConf)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func connect(
 // a connection will be made in the first Issue call.
 func (v *VaultIssuer) Connect(ctx context.Context) error {
 	var err error
-	v.cli, err = connect(ctx, v.VaultURL, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
+	v.cli, err = connect(ctx, v.URL, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
 	return err
 }
 
