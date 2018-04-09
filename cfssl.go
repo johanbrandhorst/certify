@@ -8,23 +8,28 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/cloudflare/cfssl/signer"
-
 	"github.com/cloudflare/cfssl/api/client"
 	"github.com/cloudflare/cfssl/auth"
 	"github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/signer"
 )
 
 // CFSSLIssuer implements the Issuer interface
 // with a Cloudflare CFSSL CA server backend.
+//
+// URL is required.
 type CFSSLIssuer struct {
-	//
+	// URL specifies the URL to the CFSSL server.
 	URL *url.URL
-
+	// TLSConfig allows configuration of the TLS config
+	// used when connecting to the CFSSL server.
 	TLSConfig *tls.Config
-
+	// Profile is the profile on the CFSSL server
+	// that should be used. If unset, the default
+	// profile will be used.
 	Profile string
-
+	// Auth optionally configures the authentication
+	// that should be used.
 	Auth auth.Provider
 
 	remote        client.Remote
