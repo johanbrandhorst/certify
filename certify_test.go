@@ -294,16 +294,16 @@ var _ = Describe("Certify", func() {
 				Expect(cert2).To(Equal(cert1)) // If these are equal, it can't have requested a new one
 			})
 
-			Context("but the certificate expiry is within the RenewThreshold", func() {
+			Context("but the certificate expiry is within the RenewBefore", func() {
 				It("requests a new certificate", func() {
-					// Create certs with lower TTL than RenewThreshold
+					// Create certs with lower TTL than RenewBefore
 					// to force renewal every time.
 					issuer.TimeToLive = 30 * time.Minute
 					cli := &certify.Certify{
-						CommonName:     "myserver.com",
-						Issuer:         issuer,
-						Cache:          certify.NewMemCache(),
-						RenewThreshold: time.Hour,
+						CommonName:  "myserver.com",
+						Issuer:      issuer,
+						Cache:       certify.NewMemCache(),
+						RenewBefore: time.Hour,
 					}
 
 					cert1, err := cli.GetCertificate(&tls.ClientHelloInfo{
@@ -369,8 +369,8 @@ var _ = Describe("gRPC Test", func() {
 							RootCAs: vaultConf.CertPool,
 						},
 					},
-					Cache:          certify.NewMemCache(),
-					RenewThreshold: time.Hour,
+					Cache:       certify.NewMemCache(),
+					RenewBefore: time.Hour,
 				}
 			})
 

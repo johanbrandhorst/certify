@@ -39,9 +39,9 @@ c := &certify.Certify{
     Issuer: issuer,
     // It is recommended to use a cache.
     Cache: certify.NewMemCache(),
-    // It is recommended to set a RenewThreshold.
+    // It is recommended to set RenewBefore.
     // Refresh cached certificates when < 24H left before expiry.
-    RenewThreshold: 24*time.Hour,
+    RenewBefore: 24*time.Hour,
 }
 ```
 
