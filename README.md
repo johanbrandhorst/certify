@@ -25,7 +25,7 @@ Create an issuer:
 issuer := &certify.VaultIssuer{
     URL: &url.URL{
         Scheme: "https",
-        Host: "my-local-vault-instance.com"
+        Host: "my-local-vault-instance.com",
     },
     Token:     "myVaultToken",
     Role:      "myVaultRole",
