@@ -1,4 +1,4 @@
-package certify
+package cfssl
 
 import (
 	"context"
@@ -12,13 +12,15 @@ import (
 	"github.com/cloudflare/cfssl/auth"
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/signer"
+
+	"github.com/johanbrandhorst/certify"
 )
 
-// CFSSLIssuer implements the Issuer interface
+// Issuer implements the Issuer interface
 // with a Cloudflare CFSSL CA server backend.
 //
 // URL is required.
-type CFSSLIssuer struct {
+type Issuer struct {
 	// URL specifies the URL to the CFSSL server.
 	URL *url.URL
 	// TLSConfig allows configuration of the TLS config
@@ -40,7 +42,7 @@ type CFSSLIssuer struct {
 // Connect creates a new connection to the CFSSL server
 // and sends a request to validate server availability. If not called,
 // a connection will be made in the first Issue call.
-func (m *CFSSLIssuer) Connect(ctx context.Context) error {
+func (m *Issuer) Connect(ctx context.Context) error {
 	m.remote = client.NewServerTLS(m.URL.String(), m.TLSConfig)
 	// Add context to requests
 	m.remote.SetReqModifier(func(req *http.Request, _ []byte) {
@@ -63,7 +65,7 @@ func (m *CFSSLIssuer) Connect(ctx context.Context) error {
 }
 
 // Issue issues a certificate with the provided options
-func (m *CFSSLIssuer) Issue(ctx context.Context, commonName string, conf *CertConfig) (*tls.Certificate, error) {
+func (m *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
 	if m.remote == nil {
 		err := m.Connect(ctx)
 		if err != nil {

@@ -1,4 +1,4 @@
-package certify
+package vault
 
 import (
 	"context"
@@ -11,13 +11,15 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/api"
+
+	"github.com/johanbrandhorst/certify"
 )
 
-// VaultIssuer implements the Issuer interface with a
+// Issuer implements the Issuer interface with a
 // Hashicorp Vault PKI Secrets Engine backend.
 //
 // URL, Token and Role are required.
-type VaultIssuer struct {
+type Issuer struct {
 	// URL is the URL of the Vault instance.
 	URL *url.URL
 	// Token is the Vault secret token that should be used
@@ -77,7 +79,7 @@ func connect(
 
 // Connect connects to Vault. If not called,
 // a connection will be made in the first Issue call.
-func (v *VaultIssuer) Connect(ctx context.Context) error {
+func (v *Issuer) Connect(ctx context.Context) error {
 	var err error
 	v.cli, err = connect(ctx, v.URL, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
 	return err
@@ -85,7 +87,7 @@ func (v *VaultIssuer) Connect(ctx context.Context) error {
 
 // Issue issues a certificate from the configured Vault backend,
 // establishing a connection if one doesn't already exist.
-func (v *VaultIssuer) Issue(ctx context.Context, commonName string, conf *CertConfig) (*tls.Certificate, error) {
+func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
 	if v.cli == nil {
 		err := v.Connect(ctx)
 		if err != nil {
