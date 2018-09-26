@@ -1,3 +1,8 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+  non-go = true
+
 [[constraint]]
   name = "github.com/hashicorp/vault"
   version = "0.9.6"
@@ -5,11 +10,6 @@
 [[constraint]]
   name = "github.com/ory/dockertest"
   version = "3.1.6"
-
-[prune]
-  go-tests = true
-  unused-packages = true
-  non-go = true
 
 [[constraint]]
   name = "github.com/cloudflare/cfssl"
