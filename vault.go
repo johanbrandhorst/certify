@@ -135,8 +135,8 @@ func (v *VaultIssuer) Issue(ctx context.Context, commonName string, conf *CertCo
 
 	caChainPEM := certPEM
 	if caChain, ok := secret.Data["ca_chain"]; ok {
-		for _, pemData := range caChain.([]string) {
-			caChainPEM = caChainPEM + "\n" + pemData
+		for _, pemData := range caChain.([]interface{}) {
+			caChainPEM = caChainPEM + "\n" + pemData.(string)
 		}
 	} else if ca, ok := secret.Data["issuing_ca"]; ok {
 		caChainPEM = caChainPEM + "\n" + ca.(string)
