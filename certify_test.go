@@ -18,6 +18,8 @@ import (
 	"google.golang.org/grpc/grpclog"
 
 	"github.com/johanbrandhorst/certify"
+	"github.com/johanbrandhorst/certify/issuers/cfssl"
+	"github.com/johanbrandhorst/certify/issuers/vault"
 	"github.com/johanbrandhorst/certify/proto"
 )
 
@@ -29,7 +31,7 @@ var _ = Describe("Issuers", func() {
 		IssuerFn func() certify.Issuer
 	}{
 		{Type: "Vault", IssuerFn: func() certify.Issuer {
-			return &certify.VaultIssuer{
+			return &vault.Issuer{
 				URL:   vaultConf.URL,
 				Token: vaultConf.Token,
 				Role:  vaultConf.Role,
@@ -43,7 +45,7 @@ var _ = Describe("Issuers", func() {
 			}
 		}},
 		{Type: "CFSSL", IssuerFn: func() certify.Issuer {
-			return &certify.CFSSLIssuer{
+			return &cfssl.Issuer{
 				URL: cfsslConf.URL,
 				TLSConfig: &tls.Config{
 					RootCAs:            cfsslConf.CertPool,
@@ -54,7 +56,7 @@ var _ = Describe("Issuers", func() {
 		{Type: "authenticated CFSSL", IssuerFn: func() certify.Issuer {
 			st, err := auth.New(cfsslConf.AuthKey, nil)
 			Expect(err).To(Succeed())
-			return &certify.CFSSLIssuer{
+			return &cfssl.Issuer{
 				URL: cfsslConf.URL,
 				TLSConfig: &tls.Config{
 					RootCAs:            cfsslConf.CertPool,
@@ -90,7 +92,7 @@ var _ = Describe("Issuers", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
 
-				if vIss, ok := iss.(*certify.VaultIssuer); ok {
+				if vIss, ok := iss.(*vault.Issuer); ok {
 					Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 					Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(vIss.TimeToLive), 5*time.Second))
 				}
@@ -121,7 +123,7 @@ var _ = Describe("Issuers", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
 
-					if vIss, ok := iss.(*certify.VaultIssuer); ok {
+					if vIss, ok := iss.(*vault.Issuer); ok {
 						Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 						Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(vIss.TimeToLive), 5*time.Second))
 					}
@@ -218,9 +220,9 @@ var _ = Describe("Caches", func() {
 
 var _ = Describe("Certify", func() {
 	Context("when using a Vault Issuer", func() {
-		var issuer *certify.VaultIssuer
+		var issuer *vault.Issuer
 		BeforeEach(func() {
-			issuer = &certify.VaultIssuer{
+			issuer = &vault.Issuer{
 				URL:   vaultConf.URL,
 				Token: vaultConf.Token,
 				Role:  vaultConf.Role,
@@ -361,7 +363,7 @@ var _ = Describe("gRPC Test", func() {
 			By("Creating the Certify", func() {
 				cb = &certify.Certify{
 					CommonName: "Certify",
-					Issuer: &certify.VaultIssuer{
+					Issuer: &vault.Issuer{
 						URL:   vaultConf.URL,
 						Token: vaultConf.Token,
 						Role:  vaultConf.Role,
