@@ -2,9 +2,13 @@ package vault
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"net/http"
 	"net/url"
 	"strings"
@@ -28,10 +32,6 @@ type Issuer struct {
 	// Role is the Vault Role that should be used
 	// when issuing certificates.
 	Role string
-	// InsecureAllowHTTP allows the use of HTTP to send
-	// the issued certificate and private key.
-	// WARNING: DO NOT USE UNLESS ABSOLUTELY NECESSARY.
-	InsecureAllowHTTP bool
 	// TLSConfig allows configuration of the TLS config
 	// used when connecting to the Vault server.
 	TLSConfig *tls.Config
@@ -39,7 +39,7 @@ type Issuer struct {
 	// requested from the Vault server.
 	TimeToLive time.Duration
 	// OtherSubjectAlternativeNames defines custom OID/UTF8-string SANs.
-	// The format is the same as OpenSSL: <oid>;<type>:<value> where the only current valid type is UTF8.
+	// The format is the same as OpenSSL: <oid>;<type>:<value> where the only current valid <type> is UTF8.
 	OtherSubjectAlternativeNames []string
 
 	cli *api.Client
@@ -50,13 +50,8 @@ func connect(
 	URL *url.URL,
 	role,
 	token string,
-	allowHTTP bool,
 	tlsConfig *tls.Config,
 ) (*api.Client, error) {
-	if URL.Scheme != "https" && !allowHTTP {
-		return nil, errors.New("not allowing insecure transport; enable InsecureAllowHTTP if necessary")
-	}
-
 	vConf := api.DefaultConfig()
 
 	if tlsConfig != nil {
@@ -81,7 +76,7 @@ func connect(
 // a connection will be made in the first Issue call.
 func (v *Issuer) Connect(ctx context.Context) error {
 	var err error
-	v.cli, err = connect(ctx, v.URL, v.Role, v.Token, v.InsecureAllowHTTP, v.TLSConfig)
+	v.cli, err = connect(ctx, v.URL, v.Role, v.Token, v.TLSConfig)
 	return err
 }
 
@@ -95,56 +90,77 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		}
 	}
 
-	// https://www.vaultproject.io/api/secret/pki/index.html#parameters-6
-	opts := map[string]interface{}{
-		"common_name":          commonName,
-		"exclude_cn_from_sans": true,
-		// Defaults, but can't hurt specifying them
-		"private_key_format": "der", // Actually returns PEM because of below
-		"format":             "pem",
+	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	keyBytes, err := x509.MarshalECPrivateKey(pk)
+	if err != nil {
+		return nil, err
+	}
+
+	keyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: keyBytes,
+	})
+
+	csr := &x509.CertificateRequest{
+		SignatureAlgorithm: x509.ECDSAWithSHA256,
+		Subject: pkix.Name{
+			CommonName: commonName,
+		},
 	}
 
 	if conf != nil {
-		if len(conf.SubjectAlternativeNames) > 0 {
-			opts["alt_names"] = strings.Join(conf.SubjectAlternativeNames, ",")
-		}
+		csr.DNSNames = conf.SubjectAlternativeNames
+		csr.IPAddresses = conf.IPSubjectAlternativeNames
+	}
 
-		if len(conf.IPSubjectAlternativeNames) > 0 {
-			ips := make([]string, 0, len(conf.IPSubjectAlternativeNames))
-			for _, ip := range conf.IPSubjectAlternativeNames {
-				ips = append(ips, ip.String())
-			}
-			opts["ip_sans"] = strings.Join(ips, ",")
-		}
+	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, csr, pk)
+	if err != nil {
+		return nil, err
+	}
+
+	csrPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE REQUEST",
+		Bytes: csrBytes,
+	})
+
+	// https://www.vaultproject.io/api/secret/pki/index.html#parameters-14
+	opts := map[string]interface{}{
+		"csr":                  string(csrPEM),
+		"common_name":          commonName,
+		"exclude_cn_from_sans": true,
+		// Default value, but can't hurt specifying it
+		"format": "pem",
 	}
 
 	if len(v.OtherSubjectAlternativeNames) > 0 {
-		opts["other_alt_names"] = strings.Join(v.OtherSubjectAlternativeNames, ",")
+		opts["other_sans"] = strings.Join(v.OtherSubjectAlternativeNames, ",")
 	}
 
 	if v.TimeToLive > 0 {
 		opts["ttl"] = v.TimeToLive.String()
 	}
 
-	secret, err := v.cli.Logical().Write("pki/issue/"+v.Role, opts)
+	secret, err := v.cli.Logical().Write("pki/sign/"+v.Role, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	// https://www.vaultproject.io/api/secret/pki/index.html#sample-response-8
-	certPEM := secret.Data["certificate"].(string)
-	keyPEM := secret.Data["private_key"].(string)
-
+	// https://www.vaultproject.io/api/secret/pki/index.html#sample-response-15
+	certPEM := []byte(secret.Data["certificate"].(string))
 	caChainPEM := certPEM
 	if caChain, ok := secret.Data["ca_chain"]; ok {
 		for _, pemData := range caChain.([]interface{}) {
-			caChainPEM = caChainPEM + "\n" + pemData.(string)
+			caChainPEM = append(append(caChainPEM, '\n'), []byte(pemData.(string))...)
 		}
 	} else if ca, ok := secret.Data["issuing_ca"]; ok {
-		caChainPEM = caChainPEM + "\n" + ca.(string)
+		caChainPEM = append(append(caChainPEM, '\n'), []byte(ca.(string))...)
 	}
 
-	tlsCert, err := tls.X509KeyPair([]byte(caChainPEM), []byte(keyPEM))
+	tlsCert, err := tls.X509KeyPair(caChainPEM, keyPEM)
 	if err != nil {
 		return nil, err
 	}
