@@ -20,7 +20,7 @@ import (
 
 	"github.com/cloudflare/cfssl/api/client"
 	"github.com/cloudflare/cfssl/config"
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/vault/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -201,9 +201,11 @@ var _ = BeforeSuite(func() {
 		Expect(err).To(Succeed())
 
 		_, err = cli.Logical().Write("pki/roles/"+vaultConf.Role, map[string]interface{}{
-			"allowed_domains":  "myserver.com",
-			"allow_subdomains": true,
-			"allow_any_name":   true,
+			"allowed_domains":    "myserver.com",
+			"allow_subdomains":   true,
+			"allow_any_name":     true,
+			"key_type":           "any",
+			"allowed_other_sans": "1.3.6.1.4.1.311.20.2.3;utf8:*",
 		})
 		Expect(err).To(Succeed())
 	})
