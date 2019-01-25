@@ -142,10 +142,15 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:d470faddd8d4b027226f9a5ff9d88962c34bb1699dde2acd7e9bfb70a3703d45"
+  digest = "1:f37b5c39201da61573df9bb003d0bbaba1d007233696438688afd6c8bec0dd50"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
+    "protoc-gen-go",
+    "protoc-gen-go/descriptor",
+    "protoc-gen-go/generator",
+    "protoc-gen-go/grpc",
+    "protoc-gen-go/plugin",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
@@ -257,11 +262,18 @@
   revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
 
 [[projects]]
-  digest = "1:044fe5b2b6dbdc0f41090e86466c27f480e7af860f425708b723008616625915"
+  digest = "1:4b7ad06825a5ef932f35a66ac4a959facd323d70ed2106c7e2f3fcca07d66cc3"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
     "config",
+    "ginkgo",
+    "ginkgo/convert",
+    "ginkgo/interrupthandler",
+    "ginkgo/nodot",
+    "ginkgo/testrunner",
+    "ginkgo/testsuite",
+    "ginkgo/watch",
     "internal/codelocation",
     "internal/containernode",
     "internal/failer",
@@ -514,8 +526,10 @@
     "github.com/cloudflare/cfssl/signer",
     "github.com/fsouza/go-dockerclient",
     "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/protoc-gen-go",
     "github.com/hashicorp/vault/api",
     "github.com/onsi/ginkgo",
+    "github.com/onsi/ginkgo/ginkgo",
     "github.com/onsi/gomega",
     "github.com/ory/dockertest",
     "golang.org/x/net/context",

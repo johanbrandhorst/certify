@@ -23,6 +23,15 @@ vendor:
     - dep ensure -v
     - git diff --exit-code
 
+generate:
+  stage: test
+  script:
+    - apt-get update
+    - apt-get install -y protobuf-compiler
+    - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+    - go generate -x ./...
+    - git diff --exit-code
+
 test:
   stage: test
   services:
@@ -31,5 +40,5 @@ test:
     # Necessary to get dockertest to use Docker-in-Docker
     DOCKER_HOST: "tcp://docker:2375"
   script:
-    - go get -u github.com/onsi/ginkgo/ginkgo
+    - go install ./vendor/github.com/onsi/ginkgo/ginkgo
     - ginkgo -v -r --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements
