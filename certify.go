@@ -60,28 +60,22 @@ func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 		name = strings.Split(name, ":")[0]
 	}
 
-	issueTimeout := c.IssueTimeout
-	if issueTimeout == 0 {
-		issueTimeout = time.Minute
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), issueTimeout)
-	defer cancel()
-	return c.getOrRenewCert(ctx, name)
+	return c.getOrRenewCert(name)
 }
 
 // GetClientCertificate implements the GetClientCertificate TLS config hook.
 func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+	return c.getOrRenewCert(c.CommonName)
+}
+
+func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 	issueTimeout := c.IssueTimeout
 	if issueTimeout == 0 {
 		issueTimeout = time.Minute
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), issueTimeout)
 	defer cancel()
-	// Request certificate for the configured Common Name
-	return c.getOrRenewCert(ctx, c.CommonName)
-}
 
-func (c *Certify) getOrRenewCert(ctx context.Context, name string) (*tls.Certificate, error) {
 	if c.Cache != nil {
 		cert, err := c.Cache.Get(ctx, name)
 		if err == nil {
