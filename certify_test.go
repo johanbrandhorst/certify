@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
+	"math/big"
 	"net"
 	"strings"
 	"sync"
@@ -233,6 +234,7 @@ var _ = Describe("Certify", func() {
 			},
 		}
 		issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+			defer GinkgoRecover()
 			Expect(in2).To(Equal(cli.CommonName))
 			switch len(issuer.IssueCalls()) {
 			case 1:
@@ -271,6 +273,7 @@ var _ = Describe("Certify", func() {
 			}
 
 			issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(Equal(&certify.CertConfig{
 					SubjectAlternativeNames: []string{cli.CommonName},
@@ -304,6 +307,7 @@ var _ = Describe("Certify", func() {
 					RenewBefore: time.Hour,
 				}
 				issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+					defer GinkgoRecover()
 					Expect(in2).To(Equal(cli.CommonName))
 					Expect(in3).To(Equal(&certify.CertConfig{
 						SubjectAlternativeNames: []string{cli.CommonName},
@@ -337,6 +341,7 @@ var _ = Describe("Certify", func() {
 				Issuer:     issuer,
 			}
 			issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(Equal(&certify.CertConfig{
 					IPSubjectAlternativeNames: []net.IP{net.ParseIP(serverName)},
@@ -348,6 +353,56 @@ var _ = Describe("Certify", func() {
 				ServerName: serverName,
 			})
 			Expect(err).To(Succeed())
+			Expect(issuer.IssueCalls()).To(HaveLen(1))
+		})
+	})
+
+	Context("when several requests are made at the same time", func() {
+		It("only calls to the issuer once", func() {
+			issuer := &mocks.IssuerMock{}
+			cli := &certify.Certify{
+				CommonName: "myserver.com",
+				Issuer:     issuer,
+			}
+			wait := make(chan struct{})
+			issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+				defer GinkgoRecover()
+				Expect(in2).To(Equal(cli.CommonName))
+				Expect(in3).To(Equal(&certify.CertConfig{
+					SubjectAlternativeNames: []string{cli.CommonName},
+				}))
+				<-wait
+				return &tls.Certificate{
+					Leaf: &x509.Certificate{
+						SerialNumber: big.NewInt(100),
+					},
+				}, nil
+			}
+
+			gr1 := make(chan struct{})
+			go func() {
+				defer GinkgoRecover()
+				cert, err := cli.GetClientCertificate(nil)
+				Expect(err).To(Succeed())
+				Expect(cert.Leaf.SerialNumber.Int64()).To(BeEquivalentTo(100))
+				close(gr1)
+			}()
+
+			gr2 := make(chan struct{})
+			go func() {
+				defer GinkgoRecover()
+				cert, err := cli.GetClientCertificate(nil)
+				Expect(err).To(Succeed())
+				Expect(cert.Leaf.SerialNumber.Int64()).To(BeEquivalentTo(100))
+				close(gr2)
+			}()
+
+			time.Sleep(time.Millisecond)
+
+			close(wait)
+			Eventually(gr1).Should(BeClosed())
+			Eventually(gr2).Should(BeClosed())
+
 			Expect(issuer.IssueCalls()).To(HaveLen(1))
 		})
 	})

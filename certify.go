@@ -7,6 +7,8 @@ import (
 	"net"
 	"strings"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 )
 
 // Certify implements automatic certificate acquisition
@@ -40,6 +42,8 @@ type Certify struct {
 	// IssueTimeout is the upper bound of time allowed
 	// per certificate call. Defaults to 1 minute.
 	IssueTimeout time.Duration
+
+	issueGroup singleflight.Group
 }
 
 // GetCertificate implements the GetCertificate TLS config hook.
@@ -90,22 +94,35 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		}
 	}
 
-	conf := c.CertConfig.Clone()
-	if ip := net.ParseIP(name); ip != nil {
-		conf.IPSubjectAlternativeNames = append(conf.IPSubjectAlternativeNames, ip)
-	} else {
-		conf.SubjectAlternativeNames = append(conf.SubjectAlternativeNames, name)
-	}
+	// De-duplicate simultaneous requests
+	ch := c.issueGroup.DoChan("issue", func() (interface{}, error) {
+		conf := c.CertConfig.Clone()
+		if ip := net.ParseIP(name); ip != nil {
+			conf.IPSubjectAlternativeNames = append(conf.IPSubjectAlternativeNames, ip)
+		} else {
+			conf.SubjectAlternativeNames = append(conf.SubjectAlternativeNames, name)
+		}
 
-	cert, err := c.Issuer.Issue(ctx, c.CommonName, conf)
-	if err != nil {
-		return nil, err
-	}
+		cert, err := c.Issuer.Issue(ctx, c.CommonName, conf)
+		if err != nil {
+			return nil, err
+		}
 
-	if c.Cache != nil {
-		// Ignore error, it'll just mean we renew again next time
-		_ = c.Cache.Put(ctx, name, cert)
-	}
+		if c.Cache != nil {
+			// Ignore error, it'll just mean we renew again next time
+			_ = c.Cache.Put(ctx, name, cert)
+		}
 
-	return cert, nil
+		return cert, nil
+	})
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.(*tls.Certificate), nil
+	}
 }

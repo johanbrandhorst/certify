@@ -434,6 +434,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:5325f65188f8a9559c8f20d703b2b2684333a5e03515b6c1fbf09ffc710415af"
+  name = "golang.org/x/sync"
+  packages = ["singleflight"]
+  pruneopts = "NUT"
+  revision = "37e7f081c4d4c64e13b10787722085407fe5d15f"
+
+[[projects]]
+  branch = "master"
   digest = "1:a7e40bf2313a569cc8e6c4ef67dc34eca3278526e9412bd5c86a3130fbb6cb61"
   name = "golang.org/x/sys"
   packages = [
@@ -558,6 +566,7 @@
     "github.com/onsi/gomega",
     "github.com/ory/dockertest",
     "golang.org/x/net/context",
+    "golang.org/x/sync/singleflight",
     "google.golang.org/grpc",
     "google.golang.org/grpc/credentials",
     "google.golang.org/grpc/grpclog",
