@@ -30,3 +30,11 @@ func (cc *CertConfig) Clone() *CertConfig {
 	newCC.IPSubjectAlternativeNames = cc.IPSubjectAlternativeNames
 	return newCC
 }
+
+func (cc *CertConfig) appendName(name string) {
+	if ip := net.ParseIP(name); ip != nil {
+		cc.IPSubjectAlternativeNames = append(cc.IPSubjectAlternativeNames, ip)
+	} else {
+		cc.SubjectAlternativeNames = append(cc.SubjectAlternativeNames, name)
+	}
+}
