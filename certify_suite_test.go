@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"log"
 	"math/big"
 	"net"
 	"net/url"
@@ -64,6 +65,8 @@ var _ = BeforeSuite(func() {
 		host, _, err = net.SplitHostPort(u.Host)
 		Expect(err).To(Succeed())
 	}
+
+	log.SetOutput(GinkgoWriter)
 
 	cert, key, err := generateCertAndKey(host, net.IPv4(127, 0, 0, 1))
 	Expect(err).To(Succeed())
