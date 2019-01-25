@@ -1,6 +1,7 @@
 required = [
   "github.com/golang/protobuf/protoc-gen-go",
   "github.com/onsi/ginkgo/ginkgo",
+  "github.com/matryer/moq",
 ]
 
 [prune]

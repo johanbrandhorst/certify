@@ -247,6 +247,17 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:60982783cd8054c5c5fc3cf4e30861a64ca4196487df224655daf01f1a5b2fc3"
+  name = "github.com/matryer/moq"
+  packages = [
+    ".",
+    "pkg/moq",
+  ]
+  pruneopts = "NUT"
+  revision = "39f6db0ed38f1ce0d1d60e18e6a9ab27c3834bd6"
+
+[[projects]]
+  branch = "master"
   digest = "1:b62c4f18ad6eb454ac5253e7791ded3d7867330015ca4b37b6336e57f514585e"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
@@ -469,6 +480,19 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:a99b52ff45e7b215b683682e89a52f6598869684a8917d0a7f8136cb16eab553"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "go/buildutil",
+    "go/internal/cgo",
+    "go/loader",
+  ]
+  pruneopts = "NUT"
+  revision = "cc6a436ffe6b424fffa1d91862c9b664d8407828"
+
+[[projects]]
+  branch = "master"
   digest = "1:cd018653a358d4b743a9d3bee89e825521f2ab2f2ec0770164bf7632d8d73ab7"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
@@ -528,6 +552,7 @@
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/protoc-gen-go",
     "github.com/hashicorp/vault/api",
+    "github.com/matryer/moq",
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/ginkgo",
     "github.com/onsi/gomega",

@@ -28,7 +28,7 @@ generate:
   script:
     - apt-get update
     - apt-get install -y protobuf-compiler
-    - go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+    - go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
     - go generate -x ./...
     - git diff --exit-code
 
