@@ -240,7 +240,7 @@ var _ = Describe("Certify", func() {
 			case 1:
 				// First call is GetCertificate
 				Expect(in3).To(Equal(&certify.CertConfig{
-					SubjectAlternativeNames:   append(cli.CertConfig.SubjectAlternativeNames, serverName),
+					SubjectAlternativeNames:   append(cli.CertConfig.SubjectAlternativeNames, serverName, cli.CommonName),
 					IPSubjectAlternativeNames: cli.CertConfig.IPSubjectAlternativeNames,
 				}))
 			case 2:
@@ -344,6 +344,7 @@ var _ = Describe("Certify", func() {
 				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(Equal(&certify.CertConfig{
+					SubjectAlternativeNames:   []string{cli.CommonName},
 					IPSubjectAlternativeNames: []net.IP{net.ParseIP(serverName)},
 				}))
 				return &tls.Certificate{}, nil

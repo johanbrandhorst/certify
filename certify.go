@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"net"
 	"strings"
 	"time"
 
@@ -97,10 +96,11 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 	// De-duplicate simultaneous requests
 	ch := c.issueGroup.DoChan("issue", func() (interface{}, error) {
 		conf := c.CertConfig.Clone()
-		if ip := net.ParseIP(name); ip != nil {
-			conf.IPSubjectAlternativeNames = append(conf.IPSubjectAlternativeNames, ip)
-		} else {
-			conf.SubjectAlternativeNames = append(conf.SubjectAlternativeNames, name)
+		conf.appendName(name)
+
+		// Add CommonName to SANS if not already added
+		if name != c.CommonName {
+			conf.appendName(c.CommonName)
 		}
 
 		cert, err := c.Issuer.Issue(ctx, c.CommonName, conf)
