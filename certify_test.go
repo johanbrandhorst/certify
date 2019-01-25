@@ -20,10 +20,12 @@ import (
 	"github.com/johanbrandhorst/certify"
 	"github.com/johanbrandhorst/certify/issuers/cfssl"
 	"github.com/johanbrandhorst/certify/issuers/vault"
+	"github.com/johanbrandhorst/certify/mocks"
 	"github.com/johanbrandhorst/certify/proto"
 )
 
 //go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
+//go:generate moq -out mocks/issuer.mock.go -pkg mocks . Issuer
 
 var _ = Describe("Issuers", func() {
 	issuers := []struct {
@@ -98,7 +100,7 @@ var _ = Describe("Issuers", func() {
 				}
 			})
 
-			Context("when specifying some SANs, IPSANs and OtherSANs", func() {
+			Context("when specifying some SANs, IPSANs", func() {
 				It("issues a certificate with the SANs and IPSANs", func() {
 					conf := &certify.CertConfig{
 						SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
@@ -219,118 +221,134 @@ var _ = Describe("Caches", func() {
 })
 
 var _ = Describe("Certify", func() {
-	Context("when using a Vault Issuer", func() {
-		var issuer *vault.Issuer
-		BeforeEach(func() {
-			issuer = &vault.Issuer{
-				URL:   vaultConf.URL,
-				Token: vaultConf.Token,
-				Role:  vaultConf.Role,
-				TLSConfig: &tls.Config{
-					RootCAs: vaultConf.CertPool,
-				},
-				TimeToLive: time.Minute * 10,
+	It("issues a valid certificate", func() {
+		serverName := "myotherserver.com"
+		issuer := &mocks.IssuerMock{}
+		cli := &certify.Certify{
+			CommonName: "myserver.com",
+			Issuer:     issuer,
+			CertConfig: &certify.CertConfig{
+				SubjectAlternativeNames:   []string{"extraname.com"},
+				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
+			},
+		}
+		issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+			Expect(in2).To(Equal(cli.CommonName))
+			switch len(issuer.IssueCalls()) {
+			case 1:
+				// First call is GetCertificate
+				Expect(in3).To(Equal(&certify.CertConfig{
+					SubjectAlternativeNames:   append(cli.CertConfig.SubjectAlternativeNames, serverName),
+					IPSubjectAlternativeNames: cli.CertConfig.IPSubjectAlternativeNames,
+				}))
+			case 2:
+				// Second call is GetClientCertificate
+				Expect(in3).To(Equal(&certify.CertConfig{
+					SubjectAlternativeNames:   append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName),
+					IPSubjectAlternativeNames: cli.CertConfig.IPSubjectAlternativeNames,
+				}))
 			}
-		})
+			return &tls.Certificate{}, nil
+		}
 
-		It("issues a valid certificate", func() {
+		_, err := cli.GetCertificate(&tls.ClientHelloInfo{
+			ServerName: serverName,
+		})
+		Expect(err).To(Succeed())
+		_, err = cli.GetClientCertificate(nil)
+		Expect(err).To(Succeed())
+
+		Expect(issuer.IssueCalls()).To(HaveLen(2))
+	})
+
+	Context("and there is a matching certificate in the cache", func() {
+		It("doesn't request a new one from Vault", func() {
+			issuer := &mocks.IssuerMock{}
 			cli := &certify.Certify{
 				CommonName: "myserver.com",
 				Issuer:     issuer,
-				CertConfig: &certify.CertConfig{
-					SubjectAlternativeNames:   []string{"extraname.com"},
-					IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
-				},
+				Cache:      certify.NewMemCache(),
 			}
 
-			cert1, err := cli.GetCertificate(&tls.ClientHelloInfo{
-				ServerName: "myotherserver.com",
+			issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+				Expect(in2).To(Equal(cli.CommonName))
+				Expect(in3).To(Equal(&certify.CertConfig{
+					SubjectAlternativeNames: []string{cli.CommonName},
+				}))
+				return &tls.Certificate{
+					Leaf: &x509.Certificate{
+						NotAfter: time.Now().Add(time.Minute),
+					},
+				}, nil
+			}
+
+			_, err := cli.GetCertificate(&tls.ClientHelloInfo{
+				ServerName: cli.CommonName,
 			})
 			Expect(err).To(Succeed())
-			Expect(cert1).NotTo(BeNil())
-			Expect(cert1.Leaf).NotTo(BeNil())
-			Expect(cert1.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
-			Expect(cert1.Leaf.DNSNames).To(Equal([]string{cli.CertConfig.SubjectAlternativeNames[0], "myotherserver.com"}))
-			Expect(cert1.Leaf.IPAddresses).To(HaveLen(1))
-			Expect(cert1.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
-			Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-			Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
-			Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
-			cert2, err := cli.GetClientCertificate(nil)
+			_, err = cli.GetClientCertificate(nil)
 			Expect(err).To(Succeed())
-			Expect(cert2).NotTo(BeNil())
-			Expect(cert1).NotTo(Equal(cert2))
-			Expect(cert2.Leaf).NotTo(BeNil())
-			Expect(cert2.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
-			Expect(cert2.Leaf.DNSNames).To(Equal(append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName)))
-			Expect(cert2.Leaf.IPAddresses).To(HaveLen(1))
-			Expect(cert2.Leaf.IPAddresses[0].Equal(cli.CertConfig.IPSubjectAlternativeNames[0])).To(BeTrue())
-			Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-			Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
-			Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
+
+			// Should only have called once
+			Expect(issuer.IssueCalls()).To(HaveLen(1))
 		})
 
-		Context("when there is a matching certificate in the cache", func() {
-			It("doesn't request a new one from Vault", func() {
+		Context("but the certificate expiry is within the RenewBefore", func() {
+			It("requests a new certificate", func() {
+				issuer := &mocks.IssuerMock{}
 				cli := &certify.Certify{
-					CommonName: "myserver.com",
-					Issuer:     issuer,
-					Cache:      certify.NewMemCache(),
+					CommonName:  "myserver.com",
+					Issuer:      issuer,
+					Cache:       certify.NewMemCache(),
+					RenewBefore: time.Hour,
+				}
+				issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+					Expect(in2).To(Equal(cli.CommonName))
+					Expect(in3).To(Equal(&certify.CertConfig{
+						SubjectAlternativeNames: []string{cli.CommonName},
+					}))
+					return &tls.Certificate{
+						Leaf: &x509.Certificate{
+							NotAfter: time.Now().Add(time.Minute),
+						},
+					}, nil
 				}
 
-				cert1, err := cli.GetCertificate(&tls.ClientHelloInfo{
+				_, err := cli.GetCertificate(&tls.ClientHelloInfo{
 					ServerName: cli.CommonName,
 				})
 				Expect(err).To(Succeed())
-				Expect(cert1).NotTo(BeNil())
-				Expect(cert1.Leaf).NotTo(BeNil())
-				Expect(cert1.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
-				Expect(cert1.Leaf.DNSNames).To(ConsistOf(cli.CommonName))
-				Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-				Expect(cert1.Leaf.NotAfter).To(BeTemporally(">", time.Now()))
-				Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
 
-				cert2, err := cli.GetClientCertificate(nil)
+				_, err = cli.GetClientCertificate(nil)
 				Expect(err).To(Succeed())
-				Expect(cert2).To(Equal(cert1)) // If these are equal, it can't have requested a new one
+
+				Expect(issuer.IssueCalls()).To(HaveLen(2))
 			})
+		})
+	})
 
-			Context("but the certificate expiry is within the RenewBefore", func() {
-				It("requests a new certificate", func() {
-					// Create certs with lower TTL than RenewBefore
-					// to force renewal every time.
-					issuer.TimeToLive = 30 * time.Minute
-					cli := &certify.Certify{
-						CommonName:  "myserver.com",
-						Issuer:      issuer,
-						Cache:       certify.NewMemCache(),
-						RenewBefore: time.Hour,
-					}
+	Context("when the server name can be parsed as an IP", func() {
+		It("populates the IPSubjectAlternativeNames", func() {
+			serverName := "8.8.8.8"
+			issuer := &mocks.IssuerMock{}
+			cli := &certify.Certify{
+				CommonName: "myserver.com",
+				Issuer:     issuer,
+			}
+			issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
+				Expect(in2).To(Equal(cli.CommonName))
+				Expect(in3).To(Equal(&certify.CertConfig{
+					IPSubjectAlternativeNames: []net.IP{net.ParseIP(serverName)},
+				}))
+				return &tls.Certificate{}, nil
+			}
 
-					cert1, err := cli.GetCertificate(&tls.ClientHelloInfo{
-						ServerName: cli.CommonName,
-					})
-					Expect(err).To(Succeed())
-					Expect(cert1).NotTo(BeNil())
-					Expect(cert1.Leaf).NotTo(BeNil())
-					Expect(cert1.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
-					Expect(cert1.Leaf.DNSNames).To(ConsistOf(cli.CommonName))
-					Expect(cert1.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-					Expect(cert1.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
-					Expect(cert1.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
-
-					cert2, err := cli.GetClientCertificate(nil)
-					Expect(err).To(Succeed())
-					Expect(cert2).NotTo(BeNil())
-					Expect(cert1).NotTo(Equal(cert2))
-					Expect(cert2.Leaf).NotTo(BeNil())
-					Expect(cert2.Leaf.Subject.CommonName).To(Equal(cli.CommonName))
-					Expect(cert2.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-					Expect(cert2.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(issuer.TimeToLive), 5*time.Second))
-					Expect(cert2.Leaf.Issuer.SerialNumber).To(Equal(vaultConf.CA.Subject.SerialNumber))
-				})
+			_, err := cli.GetCertificate(&tls.ClientHelloInfo{
+				ServerName: serverName,
 			})
+			Expect(err).To(Succeed())
+			Expect(issuer.IssueCalls()).To(HaveLen(1))
 		})
 	})
 })
