@@ -39,25 +39,45 @@ type Issuer struct {
 	csrGenerator  *csr.Generator
 }
 
+// FromClient returns an Issuer using the provided CFSSL API client.
+// Any changes to the issuers properties must be done before using it.
+func FromClient(v client.Remote) (*Issuer, error) {
+	i := &Issuer{
+		remote: v,
+		csrGenerator: &csr.Generator{Validator: func(req *csr.CertificateRequest) error {
+			return nil
+		}},
+	}
+
+	// Use the Info endpoint as a PING to check server availability
+	resp, err := i.remote.Info([]byte(`{}`))
+	if err != nil {
+		return nil, err
+	}
+
+	i.remoteCertPEM = []byte(resp.Certificate)
+	return i, nil
+}
+
 // Connect creates a new connection to the CFSSL server
 // and sends a request to validate server availability. If not called,
 // a connection will be made in the first Issue call.
-func (m *Issuer) Connect(ctx context.Context) error {
-	m.remote = client.NewServerTLS(m.URL.String(), m.TLSConfig)
+func (i *Issuer) Connect(ctx context.Context) error {
+	i.remote = client.NewServerTLS(i.URL.String(), i.TLSConfig)
 	// Add context to requests
-	m.remote.SetReqModifier(func(req *http.Request, _ []byte) {
+	i.remote.SetReqModifier(func(req *http.Request, _ []byte) {
 		*req = *req.WithContext(ctx)
 	})
 
 	// Use the Info endpoint as a PING to check server availability
-	resp, err := m.remote.Info([]byte(`{}`))
+	resp, err := i.remote.Info([]byte(`{}`))
 	if err != nil {
 		return err
 	}
 
-	m.remoteCertPEM = []byte(resp.Certificate)
+	i.remoteCertPEM = []byte(resp.Certificate)
 
-	m.csrGenerator = &csr.Generator{Validator: func(req *csr.CertificateRequest) error {
+	i.csrGenerator = &csr.Generator{Validator: func(req *csr.CertificateRequest) error {
 		return nil
 	}}
 
@@ -65,16 +85,16 @@ func (m *Issuer) Connect(ctx context.Context) error {
 }
 
 // Issue issues a certificate with the provided options
-func (m *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
-	if m.remote == nil {
-		err := m.Connect(ctx)
+func (i *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
+	if i.remote == nil {
+		err := i.Connect(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Add context to requests
-	m.remote.SetReqModifier(func(req *http.Request, _ []byte) {
+	i.remote.SetReqModifier(func(req *http.Request, _ []byte) {
 		*req = *req.WithContext(ctx)
 	})
 
@@ -90,14 +110,14 @@ func (m *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		}
 	}
 
-	csrPEM, keyPEM, err := m.csrGenerator.ProcessRequest(&csrReq)
+	csrPEM, keyPEM, err := i.csrGenerator.ProcessRequest(&csrReq)
 	if err != nil {
 		return nil, err
 	}
 
 	req := signer.SignRequest{
 		Request: string(csrPEM),
-		Profile: m.Profile,
+		Profile: i.Profile,
 	}
 
 	reqBytes, err := json.Marshal(&req)
@@ -106,16 +126,16 @@ func (m *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 	}
 
 	var certPEM []byte
-	if m.Auth != nil {
-		certPEM, err = m.remote.AuthSign(reqBytes, nil, m.Auth)
+	if i.Auth != nil {
+		certPEM, err = i.remote.AuthSign(reqBytes, nil, i.Auth)
 	} else {
-		certPEM, err = m.remote.Sign(reqBytes)
+		certPEM, err = i.remote.Sign(reqBytes)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	caChainPEM := append(append(certPEM, '\n'), m.remoteCertPEM...)
+	caChainPEM := append(append(certPEM, '\n'), i.remoteCertPEM...)
 	tlsCert, err := tls.X509KeyPair(caChainPEM, keyPEM)
 	if err != nil {
 		return nil, err
