@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
 	"github.com/hashicorp/vault/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/docker"
 )
 
 func TestVault(t *testing.T) {

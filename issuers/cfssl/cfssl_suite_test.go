@@ -20,10 +20,10 @@ import (
 
 	"github.com/cloudflare/cfssl/api/client"
 	"github.com/cloudflare/cfssl/config"
-	docker "github.com/fsouza/go-dockerclient"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/docker"
 )
 
 func TestCFSSL(t *testing.T) {
