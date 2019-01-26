@@ -10,7 +10,6 @@ import (
 	"go/token"
 	"go/types"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -172,10 +171,6 @@ func (m *Mocker) Mock(w io.Writer, name ...string) error {
 		doc.Imports = append(doc.Imports, stripVendorPath(pkgToImport))
 	}
 
-	if tpkg.Name() != m.pkgName {
-		doc.SourcePackagePrefix = tpkg.Name() + "."
-	}
-
 	var buf bytes.Buffer
 	err = m.tmpl.Execute(&buf, doc)
 	if err != nil {
@@ -239,19 +234,7 @@ func pkgInfoFromPath(src string) (*loader.PackageInfo, error) {
 		ParserMode: parser.SpuriousErrors,
 		Cwd:        src,
 	}
-	if strings.HasPrefix(pkgFull, string(filepath.Separator)) {
-		files, err := ioutil.ReadDir(pkgFull)
-		if err != nil {
-			return nil, err
-		}
-		for _, file := range files {
-			if !file.IsDir() && strings.HasSuffix(file.Name(), ".go") && !strings.HasSuffix(file.Name(), "_test.go") {
-				conf.CreateFromFilenames(abs, file.Name())
-			}
-		}
-	} else {
-		conf.Import(pkgFull)
-	}
+	conf.Import(pkgFull)
 	lprog, err := conf.Load()
 	if err != nil {
 		return nil, err
@@ -266,10 +249,9 @@ func pkgInfoFromPath(src string) (*loader.PackageInfo, error) {
 }
 
 type doc struct {
-	PackageName         string
-	SourcePackagePrefix string
-	Objects             []obj
-	Imports             []string
+	PackageName string
+	Objects     []obj
+	Imports     []string
 }
 
 type obj struct {

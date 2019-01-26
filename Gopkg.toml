@@ -20,3 +20,12 @@ required = [
 [[constraint]]
   name = "github.com/cloudflare/cfssl"
   version = "1.3.2"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go-v2"
+  version = "0.7.0"
+
+[[constraint]]
+  name = "github.com/matryer/moq"
+  # Pending https://github.com/matryer/moq/issues/86
+  revision = "c4521bcc9dbca426d823d54b775a85c30cc527db"
