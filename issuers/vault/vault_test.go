@@ -90,6 +90,29 @@ var _ = Describe("Vault Issuer", func() {
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
 		})
 	})
+
+	Context("when the TTL is not specified", func() {
+		It("issues a certificate with the role TTL", func() {
+			iss.(*vault.Issuer).TimeToLive = 0
+
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(defaultTTL), 5*time.Second))
+		})
+	})
 })
 
 var _ = Describe("Using a pre-created client", func() {

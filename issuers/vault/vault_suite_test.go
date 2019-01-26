@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 	"log"
 	"math/big"
 	"net"
@@ -42,7 +43,8 @@ var (
 	resource *dockertest.Resource
 	waiter   docker.CloseWaiter
 
-	vaultConf vaultConfig
+	vaultConf          vaultConfig
+	defaultTTL, maxTTL time.Duration
 )
 
 var _ = BeforeSuite(func() {
@@ -86,15 +88,17 @@ var _ = BeforeSuite(func() {
 			}, docker.AuthConfiguration{})).To(Succeed())
 		}
 
+		defaultTTL = 168 * time.Hour
+		maxTTL = 720 * time.Hour
 		c, err := pool.Client.CreateContainer(docker.CreateContainerOptions{
 			Name: "vault",
 			Config: &docker.Config{
 				Image: img,
 				Env: []string{
 					"VAULT_DEV_ROOT_TOKEN_ID=" + vaultConf.Token,
-					`VAULT_LOCAL_CONFIG={
-						"default_lease_ttl": "168h",
-						"max_lease_ttl": "720h",
+					fmt.Sprintf(`VAULT_LOCAL_CONFIG={
+						"default_lease_ttl": "%s",
+						"max_lease_ttl": "%s",
 						"disable_mlock": true,
 						"listener": [{
 							"tcp" :{
@@ -103,7 +107,7 @@ var _ = BeforeSuite(func() {
 								"tls_key_file": "/vault/file/key.pem"
 							}
 						}]
-					}`,
+					}`, defaultTTL, maxTTL),
 				},
 				ExposedPorts: map[docker.Port]struct{}{
 					docker.Port("8200"): struct{}{},
