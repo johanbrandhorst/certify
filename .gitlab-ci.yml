@@ -1,15 +1,12 @@
 image: golang:latest
 
+variables:
+  GOFLAGS: "-mod=vendor"
+  GO111MODULE: "on"
+
 stages:
   - build
   - test
-
-before_script:
-  # Go requires the gopath to be setup
-  - mkdir -p /go/src/github.com/johanbrandhorst/
-  - cd /go/src/github.com/johanbrandhorst/
-  - cp -r ${CI_PROJECT_DIR} certify
-  - cd certify
 
 build:
   stage: build
@@ -19,18 +16,19 @@ build:
 vendor:
   stage: test
   script:
-    - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-    - dep ensure -v
+    - go mod verify
+    - go mod tidy
     - git diff --exit-code
 
-generate:
-  stage: test
-  script:
-    - apt-get update
-    - apt-get install -y protobuf-compiler
-    - go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
-    - go generate -x ./...
-    - git diff --exit-code
+# Disabled pending https://github.com/johanbrandhorst/certify/issues/26
+#generate:
+#  stage: test
+#  script:
+#    - apt-get update
+#    - apt-get install -y protobuf-compiler
+#    - go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
+#    - go generate -x ./...
+#    - git diff --exit-code
 
 test:
   stage: test
