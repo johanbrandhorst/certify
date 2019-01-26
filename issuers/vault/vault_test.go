@@ -6,9 +6,11 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/vault/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
@@ -87,6 +89,40 @@ var _ = Describe("Vault Issuer", func() {
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
 		})
+	})
+})
+
+var _ = Describe("Using a pre-created client", func() {
+	It("issues a certificate", func() {
+		vConf := api.DefaultConfig()
+		vConf.HttpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{
+			RootCAs: vaultConf.CertPool,
+		}
+
+		vConf.Address = vaultConf.URL.String()
+		cli, err := api.NewClient(vConf)
+		Expect(err).To(Succeed())
+
+		cli.SetToken(vaultConf.Token)
+		iss := vault.FromClient(cli, vaultConf.Role)
+		iss.TimeToLive = 10 * time.Minute
+
+		cn := "somename.com"
+
+		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+		// Check that chain is included
+		Expect(tlsCert.Certificate).To(HaveLen(2))
+		caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.TimeToLive), 5*time.Second))
 	})
 })
 

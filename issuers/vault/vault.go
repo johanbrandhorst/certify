@@ -35,6 +35,7 @@ type Issuer struct {
 	// TLSConfig allows configuration of the TLS config
 	// used when connecting to the Vault server.
 	TLSConfig *tls.Config
+
 	// TimeToLive configures the lifetime of certificates
 	// requested from the Vault server.
 	TimeToLive time.Duration
@@ -45,10 +46,19 @@ type Issuer struct {
 	cli *api.Client
 }
 
+// FromClient returns an Issuer using the provided Vault API client.
+// Any changes to the issuers properties (such as setting the TTL or adding Other SANS)
+// must be done before using it. The client must have its token configured.
+func FromClient(v *api.Client, role string) *Issuer {
+	return &Issuer{
+		Role: role,
+		cli:  v,
+	}
+}
+
 func connect(
 	ctx context.Context,
 	URL *url.URL,
-	role,
 	token string,
 	tlsConfig *tls.Config,
 ) (*api.Client, error) {
@@ -58,10 +68,6 @@ func connect(
 		vConf.HttpClient.Transport.(*http.Transport).TLSClientConfig = tlsConfig.Clone()
 	}
 
-	dl, ok := ctx.Deadline()
-	if ok {
-		vConf.Timeout = time.Until(dl)
-	}
 	vConf.Address = URL.String()
 	cli, err := api.NewClient(vConf)
 	if err != nil {
@@ -76,7 +82,7 @@ func connect(
 // a connection will be made in the first Issue call.
 func (v *Issuer) Connect(ctx context.Context) error {
 	var err error
-	v.cli, err = connect(ctx, v.URL, v.Role, v.Token, v.TLSConfig)
+	v.cli, err = connect(ctx, v.URL, v.Token, v.TLSConfig)
 	return err
 }
 
