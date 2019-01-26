@@ -9,9 +9,9 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/vault/api"
@@ -105,7 +105,7 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		Bytes: keyBytes,
 	})
 
-	csr := &x509.CertificateRequest{
+	template := &x509.CertificateRequest{
 		SignatureAlgorithm: x509.ECDSAWithSHA256,
 		Subject: pkix.Name{
 			CommonName: commonName,
@@ -113,38 +113,25 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 	}
 
 	if conf != nil {
-		csr.DNSNames = conf.SubjectAlternativeNames
-		csr.IPAddresses = conf.IPSubjectAlternativeNames
+		template.DNSNames = conf.SubjectAlternativeNames
+		template.IPAddresses = conf.IPSubjectAlternativeNames
 	}
 
-	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, csr, pk)
+	csr, err := x509.CreateCertificateRequest(rand.Reader, template, pk)
 	if err != nil {
 		return nil, err
 	}
 
-	csrPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE REQUEST",
-		Bytes: csrBytes,
-	})
-
-	// https://www.vaultproject.io/api/secret/pki/index.html#parameters-14
-	opts := map[string]interface{}{
-		"csr":                  string(csrPEM),
-		"common_name":          commonName,
-		"exclude_cn_from_sans": true,
-		// Default value, but can't hurt specifying it
-		"format": "pem",
+	opts := csrOpts{
+		CSR:               csr,
+		CommonName:        commonName,
+		ExcludeCNFromSANS: true,
+		Format:            "pem",
+		OtherSans:         v.OtherSubjectAlternativeNames,
+		TimeToLive:        ttl(v.TimeToLive),
 	}
 
-	if len(v.OtherSubjectAlternativeNames) > 0 {
-		opts["other_sans"] = strings.Join(v.OtherSubjectAlternativeNames, ",")
-	}
-
-	if v.TimeToLive > 0 {
-		opts["ttl"] = v.TimeToLive.String()
-	}
-
-	secret, err := v.cli.Logical().Write("pki/sign/"+v.Role, opts)
+	secret, err := v.signCSR(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -168,4 +155,34 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 	// This can't error since it's called in tls.X509KeyPair above successfully
 	tlsCert.Leaf, _ = x509.ParseCertificate(tlsCert.Certificate[0])
 	return &tlsCert, nil
+}
+
+func (v *Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) {
+	r := v.cli.NewRequest("PUT", "/v1/pki/sign/"+v.Role)
+	if err := r.SetJSONBody(opts); err != nil {
+		return nil, err
+	}
+
+	resp, err := v.cli.RawRequestWithContext(ctx, r)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if resp != nil && resp.StatusCode == 404 {
+		secret, parseErr := api.ParseSecret(resp.Body)
+		switch parseErr {
+		case nil:
+		case io.EOF:
+			return nil, nil
+		default:
+			return nil, err
+		}
+		if secret != nil && (len(secret.Warnings) > 0 || len(secret.Data) > 0) {
+			return secret, err
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return api.ParseSecret(resp.Body)
 }
