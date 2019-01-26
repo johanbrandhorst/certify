@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"net"
 
+	"github.com/cloudflare/cfssl/api/client"
 	"github.com/cloudflare/cfssl/auth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,8 +22,7 @@ var _ = Describe("CFSSL Issuer", func() {
 		iss = &cfssl.Issuer{
 			URL: cfsslConf.URL,
 			TLSConfig: &tls.Config{
-				RootCAs:            cfsslConf.CertPool,
-				InsecureSkipVerify: true,
+				RootCAs: cfsslConf.CertPool,
 			},
 		}
 	})
@@ -80,8 +80,7 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 		iss = &cfssl.Issuer{
 			URL: cfsslConf.URL,
 			TLSConfig: &tls.Config{
-				RootCAs:            cfsslConf.CertPool,
-				InsecureSkipVerify: true,
+				RootCAs: cfsslConf.CertPool,
 			},
 			Auth:    st,
 			Profile: cfsslConf.Profile,
@@ -129,5 +128,29 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
 		})
+	})
+})
+
+var _ = Describe("Using a pre-created client", func() {
+	It("issues a certificate", func() {
+		remote := client.NewServerTLS(cfsslConf.URL.String(), &tls.Config{
+			RootCAs: cfsslConf.CertPool,
+		})
+		iss, err := cfssl.FromClient(remote)
+		Expect(err).To(Succeed())
+
+		cn := "somename.com"
+
+		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+		// Check that chain is included
+		Expect(tlsCert.Certificate).To(HaveLen(2))
+		caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
 	})
 })
