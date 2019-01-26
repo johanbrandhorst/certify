@@ -281,7 +281,8 @@ var _ = Describe("Certify", func() {
 				close(gr2)
 			}()
 
-			time.Sleep(time.Millisecond)
+			// Let the goroutines start
+			time.Sleep(10 * time.Millisecond)
 
 			close(wait)
 			Eventually(gr1).Should(BeClosed())
