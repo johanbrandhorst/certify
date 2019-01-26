@@ -19,6 +19,7 @@ Currently implemented issuers:
 
 - [Vault PKI Secrets Engine](https://vaultproject.io)
 - [Cloudflare CFSSL Certificate Authority](https://cfssl.org/)
+- [AWS Certificate Manager Private Certificate Authority](https://aws.amazon.com/certificate-manager/private-certificate-authority/)
 
 ## Usage
 
