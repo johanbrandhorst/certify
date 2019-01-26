@@ -29,6 +29,26 @@
   revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
 
 [[projects]]
+  digest = "1:d5f84ab6442ff802bac0cdbf88a28200220401701ea713d2986c225140676ca2"
+  name = "github.com/aws/aws-sdk-go-v2"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/signer/v4",
+    "internal/awsutil",
+    "internal/sdk",
+    "private/protocol",
+    "private/protocol/json/jsonutil",
+    "private/protocol/jsonrpc",
+    "private/protocol/rest",
+    "service/acmpca",
+    "service/acmpca/acmpcaiface",
+  ]
+  pruneopts = "NUT"
+  revision = "c2b476bac53067cebc587747e866881b2e383625"
+  version = "v0.7.0"
+
+[[projects]]
   digest = "1:063db6a0b87d39e99b3102a293cf675c23bb82074acea0a3e9276b3331216c2a"
   name = "github.com/cenkalti/backoff"
   packages = ["."]
@@ -256,15 +276,21 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:60982783cd8054c5c5fc3cf4e30861a64ca4196487df224655daf01f1a5b2fc3"
+  digest = "1:1f2aebae7e7c856562355ec0198d8ca2fa222fb05e5b1b66632a1fce39631885"
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c2b33e84"
+
+[[projects]]
+  digest = "1:7bebc379efb58f69e1a25422674120b143194f61a7c3bcf8e58704d2f2ce8697"
   name = "github.com/matryer/moq"
   packages = [
     ".",
     "pkg/moq",
   ]
   pruneopts = "NUT"
-  revision = "39f6db0ed38f1ce0d1d60e18e6a9ab27c3834bd6"
+  revision = "c4521bcc9dbca426d823d54b775a85c30cc527db"
 
 [[projects]]
   branch = "master"
@@ -317,11 +343,13 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:feed851b93f9debbe8180092067c4e29a51c06dbb5fe2f643ec9feea039670a3"
+  digest = "1:2818b181473a181ae7b727cb5e505ca0e8e5b696b6929c050262820c6152d63b"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
     "format",
+    "gstruct",
+    "gstruct/errors",
     "internal/assertion",
     "internal/asyncassertion",
     "internal/oraclematcher",
@@ -572,6 +600,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/aws/aws-sdk-go-v2/aws",
+    "github.com/aws/aws-sdk-go-v2/service/acmpca",
+    "github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface",
     "github.com/cloudflare/cfssl/api/client",
     "github.com/cloudflare/cfssl/auth",
     "github.com/cloudflare/cfssl/config",
@@ -585,6 +616,7 @@
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/ginkgo",
     "github.com/onsi/gomega",
+    "github.com/onsi/gomega/gstruct",
     "github.com/ory/dockertest",
     "golang.org/x/net/context",
     "golang.org/x/sync/singleflight",
