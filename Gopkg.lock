@@ -118,14 +118,6 @@
   version = "v0.3.2"
 
 [[projects]]
-  digest = "1:52ec55889de2c93a772ceba253313c12f65444aac61a11182d4d119ef97479e8"
-  name = "github.com/fatih/structs"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
-  version = "v1.0"
-
-[[projects]]
   digest = "1:34f637ee0d9cdb47c8d96e3250c1d00d8d87cab7645bd8d19dc517fb26752d16"
   name = "github.com/fsouza/go-dockerclient"
   packages = ["."]
@@ -206,12 +198,28 @@
   revision = "b7773ae218740a7be65057fc60b366a49b538a44"
 
 [[projects]]
+  digest = "1:a829eb939bb66d283a2ffd5b0cd3960cac26e0467c6af8a9344116d6d317fabb"
+  name = "github.com/hashicorp/go-retryablehttp"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d3a63d3c72068412f9ecd7c36faafd874d2e2888"
+  version = "v0.5.1"
+
+[[projects]]
   branch = "master"
   digest = "1:cdb5ce76cd7af19e3d2d5ba9b6458a2ee804f0d376711215dd3df5f51100d423"
   name = "github.com/hashicorp/go-rootcerts"
   packages = ["."]
   pruneopts = "NUT"
   revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+
+[[projects]]
+  digest = "1:ab128c55634eb166f6ab170896ac0f53979992250811071938d6bf2af7034690"
+  name = "github.com/hashicorp/go-sockaddr"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "3aed17b5ee41761cc2b04f2a94c7107d428967e5"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -232,18 +240,20 @@
   revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
 
 [[projects]]
-  digest = "1:62acb0602e1fa54327d91ca4290e286b47216f316f1c35fa400a493a0e92af94"
+  digest = "1:5b9aac5494a84e9e098d31ae0b6ef87983998b500f8bb08de0656712e7f81b1d"
   name = "github.com/hashicorp/vault"
   packages = [
     "api",
     "helper/compressutil",
+    "helper/consts",
+    "helper/hclutil",
     "helper/jsonutil",
     "helper/parseutil",
     "helper/strutil",
   ]
   pruneopts = "NUT"
-  revision = "7e1fbde40afee241f81ef08700e7987d86fc7242"
-  version = "v0.9.6"
+  revision = "37a1dc9c477c1c68c022d2084550f25bf20cac33"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -366,6 +376,17 @@
   version = "v3.1.6"
 
 [[projects]]
+  digest = "1:1d920dce8e11bfff65b5709e883a8ece131b63a5bc4b2cd404f9ef7eb445f73f"
+  name = "github.com/pierrec/lz4"
+  packages = [
+    ".",
+    "internal/xxh32",
+  ]
+  pruneopts = "NUT"
+  revision = "635575b42742856941dbc767b44905bb9ba083f6"
+  version = "v2.0.7"
+
+[[projects]]
   digest = "1:5cf3f025cbee5951a4ee961de067c8a89fc95a5adabead774f82822efabab121"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -380,14 +401,6 @@
   pruneopts = "NUT"
   revision = "572520ed46dbddaed19ea3d9541bdd0494163693"
   version = "v0.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:45010b961ea5349797980f57e2b7cd54b398d71ec3aba056a6bf2916d7cce024"
-  name = "github.com/sethgrid/pester"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ed9870dad3170c0b25ab9b11830cc57c3a7798fb"
 
 [[projects]]
   digest = "1:6989062eb7ccf25cf38bf4fe3dba097ee209f896cda42cefdca3927047bef7b6"
@@ -485,6 +498,14 @@
   pruneopts = "NUT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:9fdc2b55e8e0fafe4b41884091e51e77344f7dc511c5acedcfd98200003bff90"
+  name = "golang.org/x/time"
+  packages = ["rate"]
+  pruneopts = "NUT"
+  revision = "85acf8d2951cb2a3bde7632f9ff273ef0379bcbd"
 
 [[projects]]
   branch = "master"

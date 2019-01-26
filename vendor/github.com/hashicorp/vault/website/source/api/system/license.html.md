@@ -1,7 +1,8 @@
 ---
 layout: "api"
 page_title: "/sys/license - HTTP API"
-sidebar_current: "docs-http-system-license"
+sidebar_title: "<code>/sys/license</code>"
+sidebar_current: "api-http-system-license"
 description: |-
   The `/sys/license` endpoint is used to view and update the license used in 
   Vault.
@@ -27,7 +28,7 @@ This endpoint returns information about the currently installed license.
 ```
 $ curl \
     --header "X-Vault-Token: ..." \
-    https://vault.rocks/v1/sys/license
+    http://127.0.0.1:8200/v1/sys/license
 ```
 
 ### Sample Response
@@ -83,5 +84,5 @@ $ curl \
     --header "X-Vault-Token: ..." \
     --request PUT \
     --data @payload.json \
-    https://vault.rocks/v1/sys/license
+    http://127.0.0.1:8200/v1/sys/license
 ```
