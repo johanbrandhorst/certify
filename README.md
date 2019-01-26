@@ -67,4 +67,4 @@ tlsConfig := &tls.Config{
 ```
 
 For an end-to-end example using gRPC with mutual TLS authentication,
-see the tests.
+see the [Vault tests](./issuers/vault/vault_test.go).
