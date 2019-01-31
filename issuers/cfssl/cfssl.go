@@ -62,7 +62,11 @@ func FromClient(v client.Remote) (*Issuer, error) {
 // connect and sends a request to validate server availability and
 // cache its cert.
 func (i *Issuer) connect(ctx context.Context) error {
-	i.remote = client.NewServerTLS(i.URL.String(), i.TLSConfig)
+	if i.TLSConfig != nil {
+		i.remote = client.NewServerTLS(i.URL.String(), i.TLSConfig)
+	} else {
+		i.remote = client.NewServer(i.URL.String())
+	}
 	// Add context to requests
 	i.remote.SetReqModifier(func(req *http.Request, _ []byte) {
 		*req = *req.WithContext(ctx)
