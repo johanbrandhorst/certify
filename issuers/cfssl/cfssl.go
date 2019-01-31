@@ -59,10 +59,9 @@ func FromClient(v client.Remote) (*Issuer, error) {
 	return i, nil
 }
 
-// Connect creates a new connection to the CFSSL server
-// and sends a request to validate server availability. If not called,
-// a connection will be made in the first Issue call.
-func (i *Issuer) Connect(ctx context.Context) error {
+// connect and sends a request to validate server availability and
+// cache its cert.
+func (i *Issuer) connect(ctx context.Context) error {
 	i.remote = client.NewServerTLS(i.URL.String(), i.TLSConfig)
 	// Add context to requests
 	i.remote.SetReqModifier(func(req *http.Request, _ []byte) {
@@ -84,10 +83,10 @@ func (i *Issuer) Connect(ctx context.Context) error {
 	return nil
 }
 
-// Issue issues a certificate with the provided options
+// Issue issues a certificate with the provided options.
 func (i *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
 	if i.remote == nil {
-		err := i.Connect(ctx)
+		err := i.connect(ctx)
 		if err != nil {
 			return nil, err
 		}
