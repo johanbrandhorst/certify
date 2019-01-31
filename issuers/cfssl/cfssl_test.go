@@ -21,8 +21,118 @@ var _ = Describe("CFSSL Issuer", func() {
 	BeforeEach(func() {
 		iss = &cfssl.Issuer{
 			URL: cfsslConf.URL,
+		}
+	})
+
+	It("issues a certificate", func() {
+		cn := "somename.com"
+
+		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+		// Check that chain is included
+		Expect(tlsCert.Certificate).To(HaveLen(2))
+		caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+	})
+
+	Context("when specifying some SANs, IPSANs", func() {
+		It("issues a certificate with the SANs and IPSANs", func() {
+			conf := &certify.CertConfig{
+				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
+				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
+			}
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+			Expect(tlsCert.Leaf.DNSNames).To(Equal(conf.SubjectAlternativeNames))
+			Expect(tlsCert.Leaf.IPAddresses).To(HaveLen(len(conf.IPSubjectAlternativeNames)))
+			for i, ip := range tlsCert.Leaf.IPAddresses {
+				Expect(ip.Equal(conf.IPSubjectAlternativeNames[i])).To(BeTrue())
+			}
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+		})
+	})
+})
+
+var _ = Describe("Authenticated CFSSL Issuer", func() {
+	var iss certify.Issuer
+
+	BeforeEach(func() {
+		st, err := auth.New(cfsslConf.AuthKey, nil)
+		Expect(err).To(Succeed())
+		iss = &cfssl.Issuer{
+			URL:     cfsslConf.URL,
+			Auth:    st,
+			Profile: cfsslConf.Profile,
+		}
+	})
+
+	It("issues a certificate", func() {
+		cn := "somename.com"
+
+		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+		// Check that chain is included
+		Expect(tlsCert.Certificate).To(HaveLen(2))
+		caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+	})
+
+	Context("when specifying some SANs, IPSANs", func() {
+		It("issues a certificate with the SANs and IPSANs", func() {
+			conf := &certify.CertConfig{
+				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
+				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
+			}
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+			Expect(tlsCert.Leaf.DNSNames).To(Equal(conf.SubjectAlternativeNames))
+			Expect(tlsCert.Leaf.IPAddresses).To(HaveLen(len(conf.IPSubjectAlternativeNames)))
+			for i, ip := range tlsCert.Leaf.IPAddresses {
+				Expect(ip.Equal(conf.IPSubjectAlternativeNames[i])).To(BeTrue())
+			}
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+		})
+	})
+})
+
+var _ = Describe("CFSSL TLS Issuer", func() {
+	var iss certify.Issuer
+
+	BeforeEach(func() {
+		iss = &cfssl.Issuer{
+			URL: cfsslTLSConf.URL,
 			TLSConfig: &tls.Config{
-				RootCAs: cfsslConf.CertPool,
+				RootCAs: cfsslTLSConf.CertPool,
 			},
 		}
 	})
@@ -78,12 +188,12 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 		st, err := auth.New(cfsslConf.AuthKey, nil)
 		Expect(err).To(Succeed())
 		iss = &cfssl.Issuer{
-			URL: cfsslConf.URL,
+			URL: cfsslTLSConf.URL,
 			TLSConfig: &tls.Config{
-				RootCAs: cfsslConf.CertPool,
+				RootCAs: cfsslTLSConf.CertPool,
 			},
 			Auth:    st,
-			Profile: cfsslConf.Profile,
+			Profile: cfsslTLSConf.Profile,
 		}
 	})
 
@@ -133,9 +243,7 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 
 var _ = Describe("Using a pre-created client", func() {
 	It("issues a certificate", func() {
-		remote := client.NewServerTLS(cfsslConf.URL.String(), &tls.Config{
-			RootCAs: cfsslConf.CertPool,
-		})
+		remote := client.NewServer(cfsslConf.URL.String())
 		iss, err := cfssl.FromClient(remote)
 		Expect(err).To(Succeed())
 
