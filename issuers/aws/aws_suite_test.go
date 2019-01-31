@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestAws(t *testing.T) {
+func TestAWS(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Aws Suite")
+	RunSpecs(t, "AWS Suite")
 }
