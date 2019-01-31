@@ -56,41 +56,29 @@ func FromClient(v *api.Client, role string) *Issuer {
 	}
 }
 
-func connect(
-	ctx context.Context,
-	URL *url.URL,
-	token string,
-	tlsConfig *tls.Config,
-) (*api.Client, error) {
+func (v *Issuer) connect(ctx context.Context) error {
 	vConf := api.DefaultConfig()
 
-	if tlsConfig != nil {
-		vConf.HttpClient.Transport.(*http.Transport).TLSClientConfig = tlsConfig.Clone()
+	if v.TLSConfig != nil {
+		vConf.HttpClient.Transport.(*http.Transport).TLSClientConfig = v.TLSConfig.Clone()
 	}
 
-	vConf.Address = URL.String()
-	cli, err := api.NewClient(vConf)
-	if err != nil {
-		return nil, err
-	}
-
-	cli.SetToken(token)
-	return cli, nil
-}
-
-// Connect connects to Vault. If not called,
-// a connection will be made in the first Issue call.
-func (v *Issuer) Connect(ctx context.Context) error {
+	vConf.Address = v.URL.String()
 	var err error
-	v.cli, err = connect(ctx, v.URL, v.Token, v.TLSConfig)
-	return err
+	v.cli, err = api.NewClient(vConf)
+	if err != nil {
+		return err
+	}
+
+	v.cli.SetToken(v.Token)
+	return nil
 }
 
 // Issue issues a certificate from the configured Vault backend,
 // establishing a connection if one doesn't already exist.
 func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
-	if v.cli == nil {
-		err := v.Connect(ctx)
+	if v.cli == nil { // Could be set by FromClient
+		err := v.connect(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +151,7 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 	return &tlsCert, nil
 }
 
-func (v *Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) {
+func (v Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) {
 	r := v.cli.NewRequest("PUT", "/v1/pki/sign/"+v.Role)
 	if err := r.SetJSONBody(opts); err != nil {
 		return nil, err
