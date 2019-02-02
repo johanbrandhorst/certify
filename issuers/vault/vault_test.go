@@ -29,12 +29,100 @@ var _ = Describe("Vault Issuer", func() {
 
 	BeforeEach(func() {
 		iss = &vault.Issuer{
+			URL:   vaultTLSConf.URL,
+			Token: vaultTLSConf.Token,
+			Role:  vaultTLSConf.Role,
+			TLSConfig: &tls.Config{
+				RootCAs: vaultTLSConf.CertPool,
+			},
+			TimeToLive: time.Minute * 10,
+			// No idea how to format this. Copied from
+			// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
+			OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
+		}
+	})
+
+	It("issues a certificate", func() {
+		cn := "somename.com"
+
+		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+		// Check that chain is included
+		Expect(tlsCert.Certificate).To(HaveLen(2))
+		caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+	})
+
+	Context("when specifying some SANs, IPSANs", func() {
+		It("issues a certificate with the SANs and IPSANs", func() {
+			conf := &certify.CertConfig{
+				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
+				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
+			}
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+			Expect(tlsCert.Leaf.DNSNames).To(Equal(conf.SubjectAlternativeNames))
+			Expect(tlsCert.Leaf.IPAddresses).To(HaveLen(len(conf.IPSubjectAlternativeNames)))
+			for i, ip := range tlsCert.Leaf.IPAddresses {
+				Expect(ip.Equal(conf.IPSubjectAlternativeNames[i])).To(BeTrue())
+			}
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		})
+	})
+
+	Context("when the TTL is not specified", func() {
+		It("issues a certificate with the role TTL", func() {
+			iss.(*vault.Issuer).TimeToLive = 0
+
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(defaultTTL), 5*time.Second))
+		})
+	})
+})
+
+var _ = Describe("Vault HTTP Issuer", func() {
+	var iss certify.Issuer
+
+	BeforeEach(func() {
+		iss = &vault.Issuer{
 			URL:   vaultConf.URL,
 			Token: vaultConf.Token,
 			Role:  vaultConf.Role,
-			TLSConfig: &tls.Config{
-				RootCAs: vaultConf.CertPool,
-			},
 			TimeToLive: time.Minute * 10,
 			// No idea how to format this. Copied from
 			// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
@@ -119,15 +207,15 @@ var _ = Describe("Using a pre-created client", func() {
 	It("issues a certificate", func() {
 		vConf := api.DefaultConfig()
 		vConf.HttpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{
-			RootCAs: vaultConf.CertPool,
+			RootCAs: vaultTLSConf.CertPool,
 		}
 
-		vConf.Address = vaultConf.URL.String()
+		vConf.Address = vaultTLSConf.URL.String()
 		cli, err := api.NewClient(vConf)
 		Expect(err).To(Succeed())
 
-		cli.SetToken(vaultConf.Token)
-		iss := vault.FromClient(cli, vaultConf.Role)
+		cli.SetToken(vaultTLSConf.Token)
+		iss := vault.FromClient(cli, vaultTLSConf.Role)
 		iss.TimeToLive = 10 * time.Minute
 
 		cn := "somename.com"
@@ -178,11 +266,11 @@ var _ = Describe("gRPC Test", func() {
 				cb = &certify.Certify{
 					CommonName: "Certify",
 					Issuer: &vault.Issuer{
-						URL:   vaultConf.URL,
-						Token: vaultConf.Token,
-						Role:  vaultConf.Role,
+						URL:   vaultTLSConf.URL,
+						Token: vaultTLSConf.Token,
+						Role:  vaultTLSConf.Role,
 						TLSConfig: &tls.Config{
-							RootCAs: vaultConf.CertPool,
+							RootCAs: vaultTLSConf.CertPool,
 						},
 					},
 					Cache:       certify.NewMemCache(),
@@ -198,7 +286,7 @@ var _ = Describe("gRPC Test", func() {
 				Expect(err).To(Succeed())
 
 				cp := x509.NewCertPool()
-				cp.AddCert(vaultConf.CA)
+				cp.AddCert(vaultTLSConf.CA)
 				tlsConfig := &tls.Config{
 					GetCertificate: cb.GetCertificate,
 					ClientCAs:      cp,
@@ -215,7 +303,7 @@ var _ = Describe("gRPC Test", func() {
 
 			By("Creating the client", func() {
 				cp := x509.NewCertPool()
-				cp.AddCert(vaultConf.CA)
+				cp.AddCert(vaultTLSConf.CA)
 				tlsConfig := &tls.Config{
 					GetClientCertificate: cb.GetClientCertificate,
 					RootCAs:              cp,
