@@ -243,10 +243,14 @@ func generateCertAndKey(SAN string, IPSAN net.IP) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	certOut := new(bytes.Buffer)
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	keyOut := new(bytes.Buffer)
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	certOut := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: derBytes,
+	})
+	keyOut := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(priv),
+	})
 
-	return certOut.Bytes(), keyOut.Bytes(), nil
+	return certOut, keyOut, nil
 }
