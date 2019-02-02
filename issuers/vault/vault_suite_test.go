@@ -43,8 +43,8 @@ var (
 	resource *dockertest.Resource
 	waiter   docker.CloseWaiter
 
-	vaultConf          vaultConfig
-	defaultTTL, maxTTL time.Duration
+	vaultConf, vaultTLSConf vaultConfig
+	defaultTTL, maxTTL      time.Duration
 )
 
 var _ = BeforeSuite(func() {
@@ -69,11 +69,8 @@ var _ = BeforeSuite(func() {
 	By("Starting the Vault container", func() {
 		cp := x509.NewCertPool()
 		Expect(cp.AppendCertsFromPEM(cert)).To(BeTrue())
-		vaultConf = vaultConfig{
-			Token:    "mysecrettoken",
-			Role:     "test",
-			CertPool: cp,
-		}
+		token := "mysecrettoken"
+		role := "test"
 
 		repo := "vault"
 		version := "1.0.0"
@@ -95,7 +92,7 @@ var _ = BeforeSuite(func() {
 			Config: &docker.Config{
 				Image: img,
 				Env: []string{
-					"VAULT_DEV_ROOT_TOKEN_ID=" + vaultConf.Token,
+					"VAULT_DEV_ROOT_TOKEN_ID=" + token,
 					fmt.Sprintf(`VAULT_LOCAL_CONFIG={
 						"default_lease_ttl": "%s",
 						"max_lease_ttl": "%s",
@@ -163,16 +160,11 @@ var _ = BeforeSuite(func() {
 
 		resource = &dockertest.Resource{Container: c}
 
-		vaultConf.URL = &url.URL{
-			Scheme: "https",
-			Host:   net.JoinHostPort(host, "8201"),
-		}
-
 		conf := api.DefaultConfig()
 		conf.Address = "http://" + net.JoinHostPort(host, "8200")
 		cli, err := api.NewClient(conf)
 		Expect(err).To(Succeed())
-		cli.SetToken(vaultConf.Token)
+		cli.SetToken(token)
 
 		Expect(pool.Retry(func() error {
 			_, err := cli.Logical().Read("pki/certs")
@@ -194,10 +186,10 @@ var _ = BeforeSuite(func() {
 		Expect(err).To(Succeed())
 		caCertDER, err := base64.StdEncoding.DecodeString(resp.Data["certificate"].(string))
 		Expect(err).To(Succeed())
-		vaultConf.CA, err = x509.ParseCertificate(caCertDER)
+		vaultCA, err := x509.ParseCertificate(caCertDER)
 		Expect(err).To(Succeed())
 
-		_, err = cli.Logical().Write("pki/roles/"+vaultConf.Role, map[string]interface{}{
+		_, err = cli.Logical().Write("pki/roles/"+role, map[string]interface{}{
 			"allowed_domains":    "myserver.com",
 			"allow_subdomains":   true,
 			"allow_any_name":     true,
@@ -205,6 +197,25 @@ var _ = BeforeSuite(func() {
 			"allowed_other_sans": "1.3.6.1.4.1.311.20.2.3;utf8:*",
 		})
 		Expect(err).To(Succeed())
+
+		vaultConf = vaultConfig{
+			Token: token,
+			Role:  role,
+			URL: &url.URL{
+				Scheme: "http",
+				Host:   net.JoinHostPort(host, "8200"),
+			},
+		}
+		vaultTLSConf = vaultConfig{
+			Token:    token,
+			Role:     role,
+			CertPool: cp,
+			CA:       vaultCA,
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   net.JoinHostPort(host, "8201"),
+			},
+		}
 	})
 })
 
