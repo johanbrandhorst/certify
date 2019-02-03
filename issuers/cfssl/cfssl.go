@@ -10,10 +10,10 @@ import (
 
 	"github.com/cloudflare/cfssl/api/client"
 	"github.com/cloudflare/cfssl/auth"
-	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/signer"
 
 	"github.com/johanbrandhorst/certify"
+	"github.com/johanbrandhorst/certify/internal/csr"
 )
 
 // Issuer implements the Issuer interface
@@ -36,7 +36,6 @@ type Issuer struct {
 
 	remote        client.Remote
 	remoteCertPEM []byte
-	csrGenerator  *csr.Generator
 }
 
 // FromClient returns an Issuer using the provided CFSSL API client.
@@ -44,9 +43,6 @@ type Issuer struct {
 func FromClient(v client.Remote) (*Issuer, error) {
 	i := &Issuer{
 		remote: v,
-		csrGenerator: &csr.Generator{Validator: func(req *csr.CertificateRequest) error {
-			return nil
-		}},
 	}
 
 	// Use the Info endpoint as a PING to check server availability
@@ -80,10 +76,6 @@ func (i *Issuer) connect(ctx context.Context) error {
 
 	i.remoteCertPEM = []byte(resp.Certificate)
 
-	i.csrGenerator = &csr.Generator{Validator: func(req *csr.CertificateRequest) error {
-		return nil
-	}}
-
 	return nil
 }
 
@@ -101,19 +93,7 @@ func (i *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		*req = *req.WithContext(ctx)
 	})
 
-	csrReq := csr.CertificateRequest{
-		CN:         commonName,
-		KeyRequest: csr.NewBasicKeyRequest(),
-	}
-
-	if conf != nil {
-		csrReq.Hosts = append(csrReq.Hosts, conf.SubjectAlternativeNames...)
-		for _, ip := range conf.IPSubjectAlternativeNames {
-			csrReq.Hosts = append(csrReq.Hosts, ip.String())
-		}
-	}
-
-	csrPEM, keyPEM, err := i.csrGenerator.ProcessRequest(&csrReq)
+	csrPEM, keyPEM, err := csr.FromCertConfig(commonName, conf)
 	if err != nil {
 		return nil, err
 	}

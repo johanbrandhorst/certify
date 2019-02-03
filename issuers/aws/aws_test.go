@@ -2,6 +2,9 @@ package aws_test
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -146,6 +149,9 @@ var _ = Describe("AWS Issuer", func() {
 		conf := &certify.CertConfig{
 			SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
 			IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
 		}
 		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
@@ -168,6 +174,12 @@ var _ = Describe("AWS Issuer", func() {
 		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().AddDate(0, 0, iss.TimeToLive), 5*time.Second))
 	})
 })
+
+type keyGeneratorFunc func() (crypto.PrivateKey, error)
+
+func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
+	return kgf()
+}
 
 type key struct {
 	pem []byte

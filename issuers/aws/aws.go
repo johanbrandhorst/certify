@@ -2,12 +2,8 @@ package aws
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -17,6 +13,7 @@ import (
 	iface "github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface"
 
 	"github.com/johanbrandhorst/certify"
+	"github.com/johanbrandhorst/certify/internal/csr"
 )
 
 // Issuer implements the Issuer interface with a
@@ -91,42 +88,10 @@ func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cert
 		}
 	}
 
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	csrPEM, keyPEM, err := csr.FromCertConfig(commonName, conf)
 	if err != nil {
 		return nil, err
 	}
-
-	keyBytes, err := x509.MarshalECPrivateKey(pk)
-	if err != nil {
-		return nil, err
-	}
-
-	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: keyBytes,
-	})
-
-	template := &x509.CertificateRequest{
-		SignatureAlgorithm: x509.ECDSAWithSHA256,
-		Subject: pkix.Name{
-			CommonName: commonName,
-		},
-	}
-
-	if conf != nil {
-		template.DNSNames = conf.SubjectAlternativeNames
-		template.IPAddresses = conf.IPSubjectAlternativeNames
-	}
-
-	csr, err := x509.CreateCertificateRequest(rand.Reader, template, pk)
-	if err != nil {
-		return nil, err
-	}
-
-	csrPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE REQUEST",
-		Bytes: csr,
-	})
 
 	// Default to 30 days if unset.
 	ttl := int64(30)
