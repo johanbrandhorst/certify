@@ -2,6 +2,10 @@ package cfssl_test
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"net"
@@ -17,17 +21,23 @@ import (
 
 var _ = Describe("CFSSL Issuer", func() {
 	var iss certify.Issuer
+	var conf *certify.CertConfig
 
 	BeforeEach(func() {
 		iss = &cfssl.Issuer{
 			URL: cfsslConf.URL,
+		}
+		conf = &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
 		}
 	})
 
 	It("issues a certificate", func() {
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -45,6 +55,9 @@ var _ = Describe("CFSSL Issuer", func() {
 			conf := &certify.CertConfig{
 				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
 				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
+				KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+					return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+				}),
 			}
 			cn := "somename.com"
 
@@ -70,6 +83,7 @@ var _ = Describe("CFSSL Issuer", func() {
 
 var _ = Describe("Authenticated CFSSL Issuer", func() {
 	var iss certify.Issuer
+	var conf *certify.CertConfig
 
 	BeforeEach(func() {
 		st, err := auth.New(cfsslConf.AuthKey, nil)
@@ -79,12 +93,17 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 			Auth:    st,
 			Profile: cfsslConf.Profile,
 		}
+		conf = &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
 	})
 
 	It("issues a certificate", func() {
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -99,10 +118,8 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 
 	Context("when specifying some SANs, IPSANs", func() {
 		It("issues a certificate with the SANs and IPSANs", func() {
-			conf := &certify.CertConfig{
-				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
-				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
-			}
+			conf.SubjectAlternativeNames = []string{"extraname.com", "otherextraname.com"}
+			conf.IPSubjectAlternativeNames = []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback}
 			cn := "somename.com"
 
 			tlsCert, err := iss.Issue(context.Background(), cn, conf)
@@ -127,6 +144,7 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 
 var _ = Describe("CFSSL TLS Issuer", func() {
 	var iss certify.Issuer
+	var conf *certify.CertConfig
 
 	BeforeEach(func() {
 		iss = &cfssl.Issuer{
@@ -135,12 +153,17 @@ var _ = Describe("CFSSL TLS Issuer", func() {
 				RootCAs: cfsslTLSConf.CertPool,
 			},
 		}
+		conf = &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
 	})
 
 	It("issues a certificate", func() {
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -155,10 +178,8 @@ var _ = Describe("CFSSL TLS Issuer", func() {
 
 	Context("when specifying some SANs, IPSANs", func() {
 		It("issues a certificate with the SANs and IPSANs", func() {
-			conf := &certify.CertConfig{
-				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
-				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
-			}
+			conf.SubjectAlternativeNames = []string{"extraname.com", "otherextraname.com"}
+			conf.IPSubjectAlternativeNames = []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback}
 			cn := "somename.com"
 
 			tlsCert, err := iss.Issue(context.Background(), cn, conf)
@@ -183,6 +204,7 @@ var _ = Describe("CFSSL TLS Issuer", func() {
 
 var _ = Describe("Authenticated CFSSL Issuer", func() {
 	var iss certify.Issuer
+	var conf *certify.CertConfig
 
 	BeforeEach(func() {
 		st, err := auth.New(cfsslConf.AuthKey, nil)
@@ -195,12 +217,17 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 			Auth:    st,
 			Profile: cfsslTLSConf.Profile,
 		}
+		conf = &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
 	})
 
 	It("issues a certificate", func() {
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -215,10 +242,8 @@ var _ = Describe("Authenticated CFSSL Issuer", func() {
 
 	Context("when specifying some SANs, IPSANs", func() {
 		It("issues a certificate with the SANs and IPSANs", func() {
-			conf := &certify.CertConfig{
-				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
-				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
-			}
+			conf.SubjectAlternativeNames = []string{"extraname.com", "otherextraname.com"}
+			conf.IPSubjectAlternativeNames = []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback}
 			cn := "somename.com"
 
 			tlsCert, err := iss.Issue(context.Background(), cn, conf)
@@ -248,8 +273,13 @@ var _ = Describe("Using a pre-created client", func() {
 		Expect(err).To(Succeed())
 
 		cn := "somename.com"
+		conf := &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -262,3 +292,9 @@ var _ = Describe("Using a pre-created client", func() {
 		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
 	})
 })
+
+type keyGeneratorFunc func() (crypto.PrivateKey, error)
+
+func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
+	return kgf()
+}

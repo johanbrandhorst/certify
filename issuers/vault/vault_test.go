@@ -2,6 +2,10 @@ package vault_test
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
@@ -26,6 +30,7 @@ import (
 
 var _ = Describe("Vault Issuer", func() {
 	var iss certify.Issuer
+	var conf *certify.CertConfig
 
 	BeforeEach(func() {
 		iss = &vault.Issuer{
@@ -40,12 +45,17 @@ var _ = Describe("Vault Issuer", func() {
 			// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
 			OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
 		}
+		conf = &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
 	})
 
 	It("issues a certificate", func() {
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -63,10 +73,8 @@ var _ = Describe("Vault Issuer", func() {
 
 	Context("when specifying some SANs, IPSANs", func() {
 		It("issues a certificate with the SANs and IPSANs", func() {
-			conf := &certify.CertConfig{
-				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
-				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
-			}
+			conf.SubjectAlternativeNames = []string{"extraname.com", "otherextraname.com"}
+			conf.IPSubjectAlternativeNames = []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback}
 			cn := "somename.com"
 
 			tlsCert, err := iss.Issue(context.Background(), cn, conf)
@@ -97,7 +105,7 @@ var _ = Describe("Vault Issuer", func() {
 
 			cn := "somename.com"
 
-			tlsCert, err := iss.Issue(context.Background(), cn, nil)
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -117,23 +125,29 @@ var _ = Describe("Vault Issuer", func() {
 
 var _ = Describe("Vault HTTP Issuer", func() {
 	var iss certify.Issuer
+	var conf *certify.CertConfig
 
 	BeforeEach(func() {
 		iss = &vault.Issuer{
-			URL:   vaultConf.URL,
-			Token: vaultConf.Token,
-			Role:  vaultConf.Role,
+			URL:        vaultConf.URL,
+			Token:      vaultConf.Token,
+			Role:       vaultConf.Role,
 			TimeToLive: time.Minute * 10,
 			// No idea how to format this. Copied from
 			// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
 			OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
+		}
+		conf = &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
 		}
 	})
 
 	It("issues a certificate", func() {
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -151,10 +165,8 @@ var _ = Describe("Vault HTTP Issuer", func() {
 
 	Context("when specifying some SANs, IPSANs", func() {
 		It("issues a certificate with the SANs and IPSANs", func() {
-			conf := &certify.CertConfig{
-				SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
-				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback},
-			}
+			conf.SubjectAlternativeNames = []string{"extraname.com", "otherextraname.com"}
+			conf.IPSubjectAlternativeNames = []net.IP{net.IPv4(1, 2, 3, 4), net.IPv6loopback}
 			cn := "somename.com"
 
 			tlsCert, err := iss.Issue(context.Background(), cn, conf)
@@ -185,7 +197,7 @@ var _ = Describe("Vault HTTP Issuer", func() {
 
 			cn := "somename.com"
 
-			tlsCert, err := iss.Issue(context.Background(), cn, nil)
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -218,9 +230,14 @@ var _ = Describe("Using a pre-created client", func() {
 		iss := vault.FromClient(cli, vaultTLSConf.Role)
 		iss.TimeToLive = 10 * time.Minute
 
+		conf := &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
 		cn := "somename.com"
 
-		tlsCert, err := iss.Issue(context.Background(), cn, nil)
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
@@ -236,6 +253,12 @@ var _ = Describe("Using a pre-created client", func() {
 		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.TimeToLive), 5*time.Second))
 	})
 })
+
+type keyGeneratorFunc func() (crypto.PrivateKey, error)
+
+func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
+	return kgf()
+}
 
 type backend struct{}
 

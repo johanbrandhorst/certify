@@ -2,13 +2,8 @@ package vault
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,6 +12,7 @@ import (
 	"github.com/hashicorp/vault/api"
 
 	"github.com/johanbrandhorst/certify"
+	"github.com/johanbrandhorst/certify/internal/csr"
 )
 
 // Issuer implements the Issuer interface with a
@@ -84,40 +80,13 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		}
 	}
 
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	keyBytes, err := x509.MarshalECPrivateKey(pk)
-	if err != nil {
-		return nil, err
-	}
-
-	keyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: keyBytes,
-	})
-
-	template := &x509.CertificateRequest{
-		SignatureAlgorithm: x509.ECDSAWithSHA256,
-		Subject: pkix.Name{
-			CommonName: commonName,
-		},
-	}
-
-	if conf != nil {
-		template.DNSNames = conf.SubjectAlternativeNames
-		template.IPAddresses = conf.IPSubjectAlternativeNames
-	}
-
-	csr, err := x509.CreateCertificateRequest(rand.Reader, template, pk)
+	csrPEM, keyPEM, err := csr.FromCertConfig(commonName, conf)
 	if err != nil {
 		return nil, err
 	}
 
 	opts := csrOpts{
-		CSR:               csr,
+		CSR:               string(csrPEM),
 		CommonName:        commonName,
 		ExcludeCNFromSANS: true,
 		Format:            "pem",
