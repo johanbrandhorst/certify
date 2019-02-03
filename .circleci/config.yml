@@ -51,6 +51,13 @@ jobs:
       - run: go install ./vendor/github.com/onsi/ginkgo/ginkgo
       - run: ginkgo -v -r -coverprofile=coverage.txt -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements
       - run: bash <(curl -s https://codecov.io/bash)
+  release:
+    docker:
+      - image: golang:latest
+    steps:
+      - checkout
+      #- run: curl -sL https://git.io/goreleaser | bash
+      - run: curl -sL https://git.io/goreleaser | bash -s -- --skip-validate
 workflows:
   version: 2
   all:
@@ -60,3 +67,11 @@ workflows:
       - generate
       - lint
       - test
+      - release:
+          filters:
+            branches:
+              #ignore: /.*/
+              only: add-release-changelog
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.*)*/
+
