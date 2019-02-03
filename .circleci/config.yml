@@ -45,7 +45,7 @@ jobs:
     working_directory: /home/circleci/.go_workspace/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
-      - run: go get github.com/johanbrandhorst/goup
+      - run: go get github.com/lpar/goup
       - run: sudo rm -rf /usr/local/go
       - run: yes | sudo /home/circleci/.go_workspace/bin/goup --force --os linux --arch amd64 || true # swallow exit 141
       - run: go install ./vendor/github.com/onsi/ginkgo/ginkgo
