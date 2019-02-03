@@ -2,6 +2,7 @@ package certify
 
 import (
 	"context"
+	"crypto"
 	"crypto/tls"
 	"net"
 )
@@ -12,11 +13,21 @@ type Issuer interface {
 	Issue(context.Context, string, *CertConfig) (*tls.Certificate, error)
 }
 
+// KeyGenerator defines an interface used to generate a private key.
+type KeyGenerator interface {
+	Generate() (crypto.PrivateKey, error)
+}
+
 // CertConfig configures the specifics of the certificate
 // requested from the Issuer.
 type CertConfig struct {
 	SubjectAlternativeNames   []string
 	IPSubjectAlternativeNames []net.IP
+	// KeyGenerator is used to create new private keys
+	// for CSR requests. If not defined, defaults to ECDSA P256.
+	// Only ECDSA and RSA keys are supported.
+	// This is guaranteed to be privided in Issue calls.
+	KeyGenerator KeyGenerator
 }
 
 // Clone makes a deep copy of the CertConfig.
@@ -28,6 +39,7 @@ func (cc *CertConfig) Clone() *CertConfig {
 
 	newCC.SubjectAlternativeNames = cc.SubjectAlternativeNames
 	newCC.IPSubjectAlternativeNames = cc.IPSubjectAlternativeNames
+	newCC.KeyGenerator = cc.KeyGenerator
 	return newCC
 }
 
