@@ -1,6 +1,6 @@
 # Certify
 
-[![pipeline status](https://gitlab.com/jbrandhorst/certify/badges/master/pipeline.svg)](https://gitlab.com/jbrandhorst/certify/commits/master)
+[![CircleCI](https://circleci.com/gh/johanbrandhorst/certify/tree/master.svg?style=svg)](https://circleci.com/gh/johanbrandhorst/certify/tree/master)
 [![GoDoc](https://godoc.org/github.com/johanbrandhorst/certify?status.svg)](https://godoc.org/github.com/johanbrandhorst/certify)
 [![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certify)](https://goreportcard.com/report/github.com/johanbrandhorst/certify)
 
@@ -40,6 +40,8 @@ Create a Certify:
 
 ```go
 c := &certify.Certify{
+    // Used when request client-side certificates and
+    // added to SANs or IPSANs depending on format.
     CommonName: "MyServer.com",
     Issuer: issuer,
     // It is recommended to use a cache.
