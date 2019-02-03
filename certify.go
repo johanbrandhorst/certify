@@ -2,6 +2,10 @@ package certify
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"strings"
@@ -98,6 +102,12 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		conf := c.CertConfig.Clone()
 		conf.appendName(name)
 
+		if conf.KeyGenerator == nil {
+			conf.KeyGenerator = keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			})
+		}
+
 		// Add CommonName to SANS if not already added
 		if name != c.CommonName {
 			conf.appendName(c.CommonName)
@@ -125,4 +135,10 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		}
 		return res.Val.(*tls.Certificate), nil
 	}
+}
+
+type keyGeneratorFunc func() (crypto.PrivateKey, error)
+
+func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
+	return kgf()
 }
