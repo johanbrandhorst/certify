@@ -4,6 +4,8 @@
 [![GoDoc](https://godoc.org/github.com/johanbrandhorst/certify?status.svg)](https://godoc.org/github.com/johanbrandhorst/certify)
 [![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certify)](https://goreportcard.com/report/github.com/johanbrandhorst/certify)
 
+![Certify](logo.png "Certify")
+
 Certify allows easy automatic certificate distribution and maintenance.
 Certificates are requested as TLS connections
 are made, courtesy of the `GetCertificate` and `GetClientCertificate`
