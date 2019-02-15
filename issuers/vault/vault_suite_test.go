@@ -112,7 +112,6 @@ var _ = BeforeSuite(func() {
 				},
 			},
 			HostConfig: &docker.HostConfig{
-				NetworkMode:     "host",
 				PublishAllPorts: true,
 				PortBindings: map[docker.Port][]docker.PortBinding{
 					"8200": []docker.PortBinding{{HostPort: "8200"}},
