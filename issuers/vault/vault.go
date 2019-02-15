@@ -25,6 +25,9 @@ type Issuer struct {
 	// Token is the Vault secret token that should be used
 	// when issuing certificates.
 	Token string
+	// Mount is the name under which the PKI secrets engine
+	// is mounted. Defaults to `pki`
+	Mount string
 	// Role is the Vault Role that should be used
 	// when issuing certificates.
 	Role string
@@ -121,7 +124,12 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 }
 
 func (v Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) {
-	r := v.cli.NewRequest("PUT", "/v1/pki/sign/"+v.Role)
+	pkiMountName := "pki"
+	if v.Mount != "" {
+		pkiMountName = v.Mount
+	}
+
+	r := v.cli.NewRequest("PUT", "/v1/"+pkiMountName+"/sign/"+v.Role)
 	if err := r.SetJSONBody(opts); err != nil {
 		return nil, err
 	}
