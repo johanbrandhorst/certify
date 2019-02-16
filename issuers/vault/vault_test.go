@@ -71,6 +71,43 @@ var _ = Describe("Vault Issuer", func() {
 		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
 	})
 
+	Context("with a non-standard mount point", func() {
+		BeforeEach(func() {
+			iss = &vault.Issuer{
+				URL:   vaultTLSConf.URL,
+				Token: vaultTLSConf.Token,
+				Mount: "mount-test-pki",
+				Role:  vaultTLSConf.Role,
+				TLSConfig: &tls.Config{
+					RootCAs: vaultTLSConf.CertPool,
+				},
+				TimeToLive: time.Minute * 10,
+				// No idea how to format this. Copied from
+				// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
+				OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
+			}
+		})
+
+		It("issues a certificate", func() {
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		})
+	})
+
 	Context("when specifying some SANs, IPSANs", func() {
 		It("issues a certificate with the SANs and IPSANs", func() {
 			conf.SubjectAlternativeNames = []string{"extraname.com", "otherextraname.com"}

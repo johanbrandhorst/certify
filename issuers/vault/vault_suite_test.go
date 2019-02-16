@@ -32,6 +32,7 @@ func TestVault(t *testing.T) {
 
 type vaultConfig struct {
 	Role     string
+	Mount    string
 	Token    string
 	URL      *url.URL
 	CA       *x509.Certificate
@@ -43,8 +44,8 @@ var (
 	resource *dockertest.Resource
 	waiter   docker.CloseWaiter
 
-	vaultConf, vaultTLSConf vaultConfig
-	defaultTTL, maxTTL      time.Duration
+	vaultConf, vaultTLSConf, vaultMountConf vaultConfig
+	defaultTTL, maxTTL                      time.Duration
 )
 
 var _ = BeforeSuite(func() {
@@ -112,7 +113,6 @@ var _ = BeforeSuite(func() {
 				},
 			},
 			HostConfig: &docker.HostConfig{
-				NetworkMode:     "host",
 				PublishAllPorts: true,
 				PortBindings: map[docker.Port][]docker.PortBinding{
 					"8200": []docker.PortBinding{{HostPort: "8200"}},
@@ -166,6 +166,7 @@ var _ = BeforeSuite(func() {
 		Expect(err).To(Succeed())
 		cli.SetToken(token)
 
+		// Mount PKI at /pki
 		Expect(pool.Retry(func() error {
 			_, err := cli.Logical().Read("pki/certs")
 			return err
@@ -198,8 +199,46 @@ var _ = BeforeSuite(func() {
 		})
 		Expect(err).To(Succeed())
 
+		// Mount pki at /mount-test-pki
+		Expect(pool.Retry(func() error {
+			_, err := cli.Logical().Read("mount-test-pki/certs")
+			return err
+		})).To(Succeed())
+
+		Expect(cli.Sys().Mount("mount-test-pki", &api.MountInput{
+			Type: "pki",
+			Config: api.MountConfigInput{
+				MaxLeaseTTL: "87600h",
+			},
+		})).To(Succeed())
+		_, err = cli.Logical().Write("mount-test-pki/root/generate/internal", map[string]interface{}{
+			"ttl":         "87600h",
+			"common_name": "my_vault",
+			"ip_sans":     c.NetworkSettings.IPAddress,
+			"format":      "der",
+		})
+		Expect(err).To(Succeed())
+
+		_, err = cli.Logical().Write("mount-test-pki/roles/"+role, map[string]interface{}{
+			"allowed_domains":    "myserver.com",
+			"allow_subdomains":   true,
+			"allow_any_name":     true,
+			"key_type":           "any",
+			"allowed_other_sans": "1.3.6.1.4.1.311.20.2.3;utf8:*",
+		})
+		Expect(err).To(Succeed())
+
 		vaultConf = vaultConfig{
 			Token: token,
+			Role:  role,
+			URL: &url.URL{
+				Scheme: "http",
+				Host:   net.JoinHostPort(host, "8200"),
+			},
+		}
+		vaultMountConf = vaultConfig{
+			Token: token,
+			Mount: "mount-test-pki",
 			Role:  role,
 			URL: &url.URL{
 				Scheme: "http",

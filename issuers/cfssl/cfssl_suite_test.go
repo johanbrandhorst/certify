@@ -103,7 +103,6 @@ var _ = BeforeSuite(func() {
 				},
 			},
 			HostConfig: &docker.HostConfig{
-				NetworkMode:     "host",
 				PublishAllPorts: true,
 				PortBindings: map[docker.Port][]docker.PortBinding{
 					"8888": []docker.PortBinding{{HostPort: "8888"}},
@@ -217,7 +216,7 @@ var _ = BeforeSuite(func() {
 			Config: &docker.Config{
 				Image: img,
 				ExposedPorts: map[docker.Port]struct{}{
-					docker.Port("8888"): struct{}{},
+					docker.Port("8889"): struct{}{},
 				},
 				Cmd: []string{
 					"serve",
@@ -232,7 +231,6 @@ var _ = BeforeSuite(func() {
 				},
 			},
 			HostConfig: &docker.HostConfig{
-				NetworkMode:     "host",
 				PublishAllPorts: true,
 				PortBindings: map[docker.Port][]docker.PortBinding{
 					"8889": []docker.PortBinding{{HostPort: "8889"}},
