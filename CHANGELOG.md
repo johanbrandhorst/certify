@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.1.0](https://github.com/johanbrandhorst/certify/tree/v1.1.0) (2019-02-16)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.0.0...v1.1.0)
+
+**Merged pull requests:**
+
+- adds ability to configure mount point name for vault pki [\#40](https://github.com/johanbrandhorst/certify/pull/40) ([jlindsey](https://github.com/jlindsey))
+- Add logo [\#35](https://github.com/johanbrandhorst/certify/pull/35) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.0.0](https://github.com/johanbrandhorst/certify/tree/v1.0.0) (2019-02-03)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v0.3.0...v1.0.0)
 
@@ -12,6 +20,7 @@
 
 **Merged pull requests:**
 
+- main: Add CHANGELOG.md [\#34](https://github.com/johanbrandhorst/certify/pull/34) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Allow key configuration [\#33](https://github.com/johanbrandhorst/certify/pull/33) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - main: update README.md with CircleCI badge [\#31](https://github.com/johanbrandhorst/certify/pull/31) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Migrate CI to CircleCI [\#30](https://github.com/johanbrandhorst/certify/pull/30) ([johanbrandhorst](https://github.com/johanbrandhorst))
@@ -45,9 +54,6 @@
 - issuers/vault: Switch to CSR signing [\#19](https://github.com/johanbrandhorst/certify/pull/19) ([johanbrandhorst](https://github.com/johanbrandhorst))
 
 ## [v0.1.0](https://github.com/johanbrandhorst/certify/tree/v0.1.0) (2018-09-26)
-[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v0.1...v0.1.0)
-
-## [v0.1](https://github.com/johanbrandhorst/certify/tree/v0.1) (2018-09-26)
 **Closed issues:**
 
 - Add better explanation to CFSSL struct components [\#14](https://github.com/johanbrandhorst/certify/issues/14)
