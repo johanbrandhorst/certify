@@ -44,8 +44,9 @@ var (
 	resource *dockertest.Resource
 	waiter   docker.CloseWaiter
 
-	vaultConf, vaultTLSConf, vaultMountConf vaultConfig
-	defaultTTL, maxTTL                      time.Duration
+	vaultConf, vaultTLSConf vaultConfig
+	altMount                = "mount-test-pki"
+	defaultTTL, maxTTL      time.Duration
 )
 
 var _ = BeforeSuite(func() {
@@ -166,79 +167,48 @@ var _ = BeforeSuite(func() {
 		Expect(err).To(Succeed())
 		cli.SetToken(token)
 
-		// Mount PKI at /pki
+		// Wait for container to start. This is a no op.
 		Expect(pool.Retry(func() error {
 			_, err := cli.Logical().Read("pki/certs")
 			return err
 		})).To(Succeed())
 
-		Expect(cli.Sys().Mount("pki", &api.MountInput{
-			Type: "pki",
-			Config: api.MountConfigInput{
-				MaxLeaseTTL: "87600h",
-			},
-		})).To(Succeed())
-		resp, err := cli.Logical().Write("pki/root/generate/internal", map[string]interface{}{
-			"ttl":         "87600h",
-			"common_name": "my_vault",
-			"ip_sans":     c.NetworkSettings.IPAddress,
-			"format":      "der",
-		})
-		Expect(err).To(Succeed())
-		caCertDER, err := base64.StdEncoding.DecodeString(resp.Data["certificate"].(string))
-		Expect(err).To(Succeed())
-		vaultCA, err := x509.ParseCertificate(caCertDER)
-		Expect(err).To(Succeed())
+		var vaultCA *x509.Certificate
+		// Mount PKI at /pki and /altMount
+		for _, mountPoint := range []string{"pki", altMount} {
+			Expect(cli.Sys().Mount(mountPoint, &api.MountInput{
+				Type: "pki",
+				Config: api.MountConfigInput{
+					MaxLeaseTTL: "87600h",
+				},
+			})).To(Succeed())
+			_, err = cli.Logical().Write(mountPoint+"/roles/"+role, map[string]interface{}{
+				"allowed_domains":    "myserver.com",
+				"allow_subdomains":   true,
+				"allow_any_name":     true,
+				"key_type":           "any",
+				"allowed_other_sans": "1.3.6.1.4.1.311.20.2.3;utf8:*",
+			})
+			Expect(err).To(Succeed())
 
-		_, err = cli.Logical().Write("pki/roles/"+role, map[string]interface{}{
-			"allowed_domains":    "myserver.com",
-			"allow_subdomains":   true,
-			"allow_any_name":     true,
-			"key_type":           "any",
-			"allowed_other_sans": "1.3.6.1.4.1.311.20.2.3;utf8:*",
-		})
-		Expect(err).To(Succeed())
-
-		// Mount pki at /mount-test-pki
-		Expect(pool.Retry(func() error {
-			_, err := cli.Logical().Read("mount-test-pki/certs")
-			return err
-		})).To(Succeed())
-
-		Expect(cli.Sys().Mount("mount-test-pki", &api.MountInput{
-			Type: "pki",
-			Config: api.MountConfigInput{
-				MaxLeaseTTL: "87600h",
-			},
-		})).To(Succeed())
-		_, err = cli.Logical().Write("mount-test-pki/root/generate/internal", map[string]interface{}{
-			"ttl":         "87600h",
-			"common_name": "my_vault",
-			"ip_sans":     c.NetworkSettings.IPAddress,
-			"format":      "der",
-		})
-		Expect(err).To(Succeed())
-
-		_, err = cli.Logical().Write("mount-test-pki/roles/"+role, map[string]interface{}{
-			"allowed_domains":    "myserver.com",
-			"allow_subdomains":   true,
-			"allow_any_name":     true,
-			"key_type":           "any",
-			"allowed_other_sans": "1.3.6.1.4.1.311.20.2.3;utf8:*",
-		})
-		Expect(err).To(Succeed())
+			resp, err := cli.Logical().Write(mountPoint+"/root/generate/internal", map[string]interface{}{
+				"ttl":         "87600h",
+				"common_name": "my_vault",
+				"ip_sans":     c.NetworkSettings.IPAddress,
+				"format":      "der",
+			})
+			Expect(err).To(Succeed())
+			if mountPoint == "pki" {
+				// Parse the generated CA for the TLS connection
+				caCertDER, err := base64.StdEncoding.DecodeString(resp.Data["certificate"].(string))
+				Expect(err).To(Succeed())
+				vaultCA, err = x509.ParseCertificate(caCertDER)
+				Expect(err).To(Succeed())
+			}
+		}
 
 		vaultConf = vaultConfig{
 			Token: token,
-			Role:  role,
-			URL: &url.URL{
-				Scheme: "http",
-				Host:   net.JoinHostPort(host, "8200"),
-			},
-		}
-		vaultMountConf = vaultConfig{
-			Token: token,
-			Mount: "mount-test-pki",
 			Role:  role,
 			URL: &url.URL{
 				Scheme: "http",
