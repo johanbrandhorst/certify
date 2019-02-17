@@ -76,7 +76,7 @@ var _ = Describe("Vault Issuer", func() {
 			iss = &vault.Issuer{
 				URL:   vaultTLSConf.URL,
 				Token: vaultTLSConf.Token,
-				Mount: "mount-test-pki",
+				Mount: altMount,
 				Role:  vaultTLSConf.Role,
 				TLSConfig: &tls.Config{
 					RootCAs: vaultTLSConf.CertPool,
