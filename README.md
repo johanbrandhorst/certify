@@ -73,3 +73,19 @@ tlsConfig := &tls.Config{
 
 For an end-to-end example using gRPC with mutual TLS authentication,
 see the [Vault tests](./issuers/vault/vault_test.go).
+
+## How does it work?
+
+![How it works](howitworks.svg "How it works")
+
+Certify hooks into the `GetCertificate` and `GetClientCertificate` methods of
+the Go TLS stack `Config` struct. These get called when the server/client
+respectively is required to present its certificate. If possible, this is
+fetched from the cache, based on the requested server name. If not, a new
+certificate is issued with the requested server name present. For client
+requests, the configured `CommonName` is used.
+
+My presentation at the London HashiCorp meetup has more information:
+
+[![Certify presentation](https://img.youtube.com/vi/4We8yg9yefA/0.jpg)](https://www.youtube.com/watch?v=4We8yg9yefA&t=536)
+
