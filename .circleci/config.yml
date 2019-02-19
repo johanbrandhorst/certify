@@ -4,8 +4,7 @@ jobs:
     docker:
       - image: golang:latest
     environment:
-      GOFLAGS: "-mod=vendor"
-      GO111MODULE: "on"
+      GO111MODULE: 'on'
     steps:
       - checkout
       - run: go build ./...
@@ -13,8 +12,7 @@ jobs:
     docker:
       - image: golang:latest
     environment:
-      GOFLAGS: "-mod=vendor"
-      GO111MODULE: "on"
+      GO111MODULE: 'on'
     steps:
       - checkout
       - run: go mod verify
@@ -23,31 +21,37 @@ jobs:
   generate:
     docker:
       - image: golang:latest
+    # moq requires the GOPATH still
     working_directory: /go/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
       - run: apt-get update
       - run: apt-get install -y protobuf-compiler
+      - run: GO111MODULE=on go mod vendor
       - run: go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
       - run: go generate -x ./...
       - run: git diff --exit-code
   lint:
     docker:
       - image: golang:latest
+    # golang-ci works best with GOPATH
     working_directory: /go/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
       - run: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.13.2
+      - run: GO111MODULE=on go mod vendor
       - run: ./bin/golangci-lint run
   test:
     machine:
       image: circleci/classic:edge
+    # The CircleCI users GOPATH
     working_directory: /home/circleci/.go_workspace/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
       - run: go get github.com/lpar/goup
       - run: sudo rm -rf /usr/local/go
       - run: yes | sudo /home/circleci/.go_workspace/bin/goup --force --os linux --arch amd64 || true # swallow exit 141
+      - run: GO111MODULE=on go mod vendor
       - run: go install ./vendor/github.com/onsi/ginkgo/ginkgo
       - run: ginkgo -v -r -coverprofile=coverage.txt -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements
       - run: bash <(curl -s https://codecov.io/bash)
