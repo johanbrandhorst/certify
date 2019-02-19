@@ -1,5 +1,16 @@
 # Change Log
 
+## [v1.1.1](https://github.com/johanbrandhorst/certify/tree/v1.1.1) (2019-02-19)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.0...v1.1.1)
+
+**Merged pull requests:**
+
+- all: remove vendor folder [\#46](https://github.com/johanbrandhorst/certify/pull/46) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- issuers/vault: simplify alternative mount point tests [\#44](https://github.com/johanbrandhorst/certify/pull/44) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Add section on how it works to README [\#43](https://github.com/johanbrandhorst/certify/pull/43) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Add issue templates [\#42](https://github.com/johanbrandhorst/certify/pull/42) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- main: update changelog for v1.1.0 [\#41](https://github.com/johanbrandhorst/certify/pull/41) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.1.0](https://github.com/johanbrandhorst/certify/tree/v1.1.0) (2019-02-16)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.0.0...v1.1.0)
 
