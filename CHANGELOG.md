@@ -1,5 +1,17 @@
 # Change Log
 
+## [v1.1.2](https://github.com/johanbrandhorst/certify/tree/v1.1.2) (2019-02-23)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.1...v1.1.2)
+
+**Fixed bugs:**
+
+- Using dep with certify adds a lot of additional dependencies [\#48](https://github.com/johanbrandhorst/certify/issues/48)
+
+**Merged pull requests:**
+
+- main: move tools file into subfolder [\#49](https://github.com/johanbrandhorst/certify/pull/49) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- main: update changelog for v1.1.1 [\#47](https://github.com/johanbrandhorst/certify/pull/47) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.1.1](https://github.com/johanbrandhorst/certify/tree/v1.1.1) (2019-02-19)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.0...v1.1.1)
 
