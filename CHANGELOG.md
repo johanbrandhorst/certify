@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.1.3](https://github.com/johanbrandhorst/certify/tree/v1.1.3) (2019-03-01)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.2...v1.1.3)
+
+**Merged pull requests:**
+
+- Fixes Dir cache gob encoding, with tests [\#52](https://github.com/johanbrandhorst/certify/pull/52) ([jlindsey](https://github.com/jlindsey))
+
 ## [v1.1.2](https://github.com/johanbrandhorst/certify/tree/v1.1.2) (2019-02-23)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.1...v1.1.2)
 
@@ -9,6 +16,7 @@
 
 **Merged pull requests:**
 
+- main: update changelog for v1.1.2 [\#50](https://github.com/johanbrandhorst/certify/pull/50) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - main: move tools file into subfolder [\#49](https://github.com/johanbrandhorst/certify/pull/49) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - main: update changelog for v1.1.1 [\#47](https://github.com/johanbrandhorst/certify/pull/47) ([johanbrandhorst](https://github.com/johanbrandhorst))
 
