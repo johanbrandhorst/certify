@@ -4,6 +4,9 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -47,16 +50,23 @@ var _ = Describe("Caches", func() {
 		Context("when using "+c.Type, func() {
 			Context("after putting in a certificate", func() {
 				It("allows a user to get and delete it", func() {
-					cert := &tls.Certificate{
-						Leaf: &x509.Certificate{
-							IsCA: true,
-						},
+					keyFuncs := map[string]keyGeneratorFunc{
+						"rsa":   func() (crypto.PrivateKey, error) { return rsa.GenerateKey(rand.Reader, 2048) },
+						"ecdsa": func() (crypto.PrivateKey, error) { return ecdsa.GenerateKey(elliptic.P256(), rand.Reader) },
 					}
-					Expect(c.Cache.Put(context.Background(), "key1", cert)).To(Succeed())
-					Expect(c.Cache.Get(context.Background(), "key1")).To(Equal(cert))
-					Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
-					_, err := c.Cache.Get(context.Background(), "key1")
-					Expect(err).To(Equal(certify.ErrCacheMiss))
+
+					for keyName, genFunc := range keyFuncs {
+						By("generating a " + keyName + " key")
+						cert, err := generateCertAndKey("localhost", net.IPv4(127, 0, 0, 1), genFunc)
+						Expect(err).To(Succeed())
+						Expect(c.Cache.Put(context.Background(), "key1", cert)).To(Succeed())
+						cached, err := c.Cache.Get(context.Background(), "key1")
+						Expect(err).To(Succeed())
+						Expect(cached.Certificate).To(ConsistOf(cert.Certificate))
+						Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
+						_, err = c.Cache.Get(context.Background(), "key1")
+						Expect(err).To(Equal(certify.ErrCacheMiss))
+					}
 				})
 			})
 
