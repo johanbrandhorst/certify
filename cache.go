@@ -2,6 +2,9 @@ package certify
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rsa"
 	"crypto/tls"
 	"encoding/gob"
 	"errors"
@@ -10,6 +13,15 @@ import (
 	"path/filepath"
 	"sync"
 )
+
+func init() {
+	gob.Register(rsa.PrivateKey{})
+	gob.Register(ecdsa.PrivateKey{})
+	gob.Register(elliptic.P224())
+	gob.Register(elliptic.P256())
+	gob.Register(elliptic.P384())
+	gob.Register(elliptic.P521())
+}
 
 // Cache describes the interface that certificate caches must implement.
 // Cache implementations must be thread safe.
