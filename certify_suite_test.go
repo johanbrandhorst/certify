@@ -1,8 +1,6 @@
 package certify_test
 
 import (
-	"testing"
-
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rand"
@@ -14,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo"
