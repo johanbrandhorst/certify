@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/johanbrandhorst/certify/internal/keys"
 )
 
@@ -146,11 +148,14 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	}
 
 	done := make(chan struct{})
-	var err error
+	var (
+		err             error
+		tmpKey, tmpCert string
+		newName         = filepath.Join(string(d), name)
+	)
 	go func() {
 		defer close(done)
 
-		var tmpKey, tmpCert string
 		if tmpKey, tmpCert, err = d.writeTempFiles(name, cert); err != nil {
 			return
 		}
@@ -159,7 +164,6 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 		case <-ctx.Done():
 			// Don't overwrite the file if the context was canceled.
 		default:
-			newName := filepath.Join(string(d), name)
 			err = os.Rename(tmpKey, newName+".key")
 			if err != nil {
 				return
@@ -177,6 +181,22 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	case <-done:
 	}
 
+	// Clean up after ourselves on error, remove all artifacts from this request
+	if err != nil {
+		if e := os.Remove(tmpKey); e != nil && !os.IsNotExist(e) {
+			err = multierror.Append(err, e)
+		}
+		if e := os.Remove(tmpCert); e != nil && !os.IsNotExist(e) {
+			err = multierror.Append(err, e)
+		}
+		if e := os.Remove(newName + ".key"); e != nil && !os.IsNotExist(e) {
+			err = multierror.Append(err, e)
+		}
+		if e := os.Remove(newName + ".crt"); e != nil && !os.IsNotExist(e) {
+			err = multierror.Append(err, e)
+		}
+	}
+
 	return err
 }
 
@@ -184,19 +204,17 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 func (d DirCache) Delete(ctx context.Context, name string) error {
 	name = filepath.Join(string(d), name)
 	var (
-		err  error
-		done = make(chan struct{})
+		result error
+		done   = make(chan struct{})
 	)
 	go func() {
 		defer close(done)
 
-		err = os.Remove(name + ".key")
-		if err != nil {
-			return
+		if err := os.Remove(name + ".key"); err != nil && !os.IsNotExist(err) {
+			result = multierror.Append(result, err)
 		}
-		err = os.Remove(name + ".cert")
-		if err != nil {
-			return
+		if err := os.Remove(name + ".cert"); err != nil && !os.IsNotExist(err) {
+			result = multierror.Append(result, err)
 		}
 	}()
 	select {
@@ -204,10 +222,8 @@ func (d DirCache) Delete(ctx context.Context, name string) error {
 		return ctx.Err()
 	case <-done:
 	}
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
+
+	return result
 }
 
 // writeTempFile writes b to a temporary file, closes the file and returns its path.

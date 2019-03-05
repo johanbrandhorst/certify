@@ -43,6 +43,7 @@ require (
 	github.com/hashicorp/consul v1.4.1 // indirect
 	github.com/hashicorp/go-gcp-common v0.0.0-20180425173946-763e39302965 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20190109152822-4783caec6f2e // indirect
+	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-plugin v0.0.0-20181212150838-f444068e8f5a // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.1 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.1 // indirect
