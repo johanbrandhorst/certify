@@ -3,18 +3,16 @@ package certify
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
-	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
-)
 
+	"github.com/johanbrandhorst/certify/internal/keys"
+)
 
 // Cache describes the interface that certificate caches must implement.
 // Cache implementations must be thread safe.
@@ -224,31 +222,9 @@ func (d DirCache) writeTempFiles(prefix string, cert *tls.Certificate) (keyPath,
 }
 
 func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, error) {
-	var (
-		keyType string
-		keyDer  []byte
-	)
-
-	switch k := cert.PrivateKey.(type) {
-	case *ecdsa.PrivateKey:
-		var err error
-		keyType = "EC"
-		keyDer, err = x509.MarshalECPrivateKey(k)
-		if err != nil {
-			return "", err
-		}
-		break
-	case *rsa.PrivateKey:
-		keyType = "RSA"
-		keyDer = x509.MarshalPKCS1PrivateKey(k)
-		break
-	default:
-		return "", errors.New("unsupported private key type")
-	}
-
-	block := &pem.Block{
-		Type:  keyType + " PRIVATE KEY",
-		Bytes: keyDer,
+	pem, err := keys.Marshal(cert.PrivateKey)
+	if err != nil {
+		return "", err
 	}
 
 	// TempFile uses 0600 permissions
@@ -257,7 +233,9 @@ func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, er
 		return "", err
 	}
 
-	if err = pem.Encode(f, block); err != nil {
+	buf := bytes.NewBuffer(pem)
+
+	if _, err = buf.WriteTo(f); err != nil {
 		return "", err
 	}
 
