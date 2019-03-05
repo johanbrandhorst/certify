@@ -6,6 +6,7 @@
 [![Code Coverage](https://img.shields.io/codecov/c/github/johanbrandhorst/certify/master.svg?style=flat-square)](https://codecov.io/gh/johanbrandhorst/certify)
 [![Releases](https://img.shields.io/github/release/johanbrandhorst/certify.svg?style=flat-square)](https://github.com/johanbrandhorst/certify/releases)
 [![License](https://img.shields.io/github/license/johanbrandhorst/certify.svg?style=flat-square)](LICENSE)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify?ref=badge_shield)
 
 ![Certify](logo.png "Certify")
 
@@ -92,3 +93,7 @@ My presentation at the London HashiCorp meetup has more information:
 
 [![Certify presentation](https://img.youtube.com/vi/4We8yg9yefA/0.jpg)](https://www.youtube.com/watch?v=4We8yg9yefA&t=536)
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify?ref=badge_large)
