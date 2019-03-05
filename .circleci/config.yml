@@ -34,11 +34,11 @@ jobs:
   lint:
     docker:
       - image: golang:latest
-    # golang-ci works best with GOPATH
+    # golangci-lint works best with GOPATH
     working_directory: /go/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
-      - run: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.13.2
+      - run: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.15.0
       - run: GO111MODULE=on go mod vendor
       - run: ./bin/golangci-lint run
   test:
