@@ -3,7 +3,7 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/johanbrandhorst/certify/master.svg?style=flat-square)](https://circleci.com/gh/johanbrandhorst/certify)
 [![GoDoc](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://godoc.org/github.com/johanbrandhorst/certify)
 [![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certify?style=flat-square)](https://goreportcard.com/report/github.com/johanbrandhorst/certify)
-[![coverage](https://img.shields.io/codecov/c/github/johanbrandhorst/certify/master.svg?style=flat-square)](https://codecov.io/gh/grpc-ecosystem/grpc-gateway)
+[![coverage](https://img.shields.io/codecov/c/github/johanbrandhorst/certify/master.svg?style=flat-square)](https://codecov.io/gh/johanbrandhorst/certify)
 [![release](https://img.shields.io/github/release/johanbrandhorst/certify.svg?style=flat-square)](https://github.com/johanbrandhorst/certify/releases)
 [![license](https://img.shields.io/github/license/johanbrandhorst/certify.svg?style=flat-square)](LICENSE.txt)
 
