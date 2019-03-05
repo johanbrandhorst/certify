@@ -211,14 +211,18 @@ func (d DirCache) Delete(ctx context.Context, name string) error {
 }
 
 // writeTempFile writes b to a temporary file, closes the file and returns its path.
-func (d DirCache) writeTempFiles(prefix string, cert *tls.Certificate) (keyPath, certPath string, err error) {
-	keyPath, err = d.writeTempKey(prefix, cert)
+func (d DirCache) writeTempFiles(prefix string, cert *tls.Certificate) (string, string, error) {
+	keyPath, err := d.writeTempKey(prefix, cert)
 	if err != nil {
-		return
+		return "", "", err
 	}
 
-	certPath, err = d.writeTempCert(prefix, cert)
-	return
+	certPath, err := d.writeTempCert(prefix, cert)
+	if err != nil {
+		return "", "", err
+	}
+
+	return keyPath, certPath, err
 }
 
 func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, error) {
