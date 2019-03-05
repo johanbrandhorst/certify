@@ -15,6 +15,7 @@ import (
 	"sync"
 )
 
+
 // Cache describes the interface that certificate caches must implement.
 // Cache implementations must be thread safe.
 type Cache interface {
