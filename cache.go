@@ -156,6 +156,7 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	go func() {
 		defer close(done)
 
+		var tmpKey, tmpCert string
 		if tmpKey, tmpCert, err = d.writeTempFiles(name, cert); err != nil {
 			return
 		}
@@ -164,6 +165,7 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 		case <-ctx.Done():
 			// Don't overwrite the file if the context was canceled.
 		default:
+			newName := filepath.Join(string(d), name)
 			err = os.Rename(tmpKey, newName+".key")
 			if err != nil {
 				return
