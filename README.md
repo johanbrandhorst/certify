@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/johanbrandhorst/certify?style=flat-square)](https://goreportcard.com/report/github.com/johanbrandhorst/certify)
 [![Code Coverage](https://img.shields.io/codecov/c/github/johanbrandhorst/certify/master.svg?style=flat-square)](https://codecov.io/gh/johanbrandhorst/certify)
 [![Releases](https://img.shields.io/github/release/johanbrandhorst/certify.svg?style=flat-square)](https://github.com/johanbrandhorst/certify/releases)
-[![License](https://img.shields.io/github/license/johanbrandhorst/certify.svg?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/github/license/johanbrandhorst/certify.svg?style=flat-square)](LICENSE)
 
 ![Certify](logo.png "Certify")
 
