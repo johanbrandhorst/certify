@@ -237,11 +237,9 @@ func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, er
 		if err != nil {
 			return "", err
 		}
-		break
 	case *rsa.PrivateKey:
 		keyType = "RSA"
 		keyDer = x509.MarshalPKCS1PrivateKey(k)
-		break
 	default:
 		return "", errors.New("unsupported private key type")
 	}
