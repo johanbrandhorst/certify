@@ -15,6 +15,12 @@ are made, courtesy of the `GetCertificate` and `GetClientCertificate`
 `tls.Config` hooks. Certificates are optionally cached. Simultaneous requests
 are deduplicated to minimize pressure on issuers.
 
+## Users
+
+- [Georgetown University](https://www.georgetown.edu/)
+
+Are you using Certify and want to be visible here? Open an issue!
+
 ## Issuers
 
 Certify exposes an `Issuer` interface which is used to allow switching
