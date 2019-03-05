@@ -16,7 +16,9 @@ import (
 
 func init() {
 	gob.Register(rsa.PrivateKey{})
+	gob.Register(rsa.PublicKey{})
 	gob.Register(ecdsa.PrivateKey{})
+	gob.Register(ecdsa.PublicKey{})
 	gob.Register(elliptic.P224())
 	gob.Register(elliptic.P256())
 	gob.Register(elliptic.P384())
