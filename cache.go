@@ -92,23 +92,8 @@ func (d DirCache) Get(ctx context.Context, name string) (*tls.Certificate, error
 	)
 
 	go func() {
-		var (
-			certData, keyData []byte
-		)
-
-		defer close(done)
-
-		certData, err = ioutil.ReadFile(name + ".cert")
-		if err != nil {
-			return
-		}
-
-		keyData, err = ioutil.ReadFile(name + ".key")
-		if err != nil {
-			return
-		}
-
-		cert, err = tls.X509KeyPair(certData, keyData)
+		cert, err = tls.LoadX509KeyPair(name+".cert", name+".key")
+		close(done)
 	}()
 
 	select {
