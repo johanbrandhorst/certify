@@ -1,7 +1,6 @@
 package certify
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/pem"
@@ -94,31 +93,20 @@ func (d DirCache) Get(ctx context.Context, name string) (*tls.Certificate, error
 
 	go func() {
 		var (
-			f                 *os.File
 			certData, keyData []byte
 		)
 
 		defer close(done)
 
-		f, err = os.Open(name + ".cert")
+		certData, err = ioutil.ReadFile(name + ".cert")
 		if err != nil {
 			return
 		}
-		certData, err = ioutil.ReadAll(f)
-		if err != nil {
-			return
-		}
-		_ = f.Close()
 
-		f, err = os.Open(name + ".key")
+		keyData, err = ioutil.ReadFile(name + ".key")
 		if err != nil {
 			return
 		}
-		keyData, err = ioutil.ReadAll(f)
-		if err != nil {
-			return
-		}
-		_ = f.Close()
 
 		cert, err = tls.X509KeyPair(certData, keyData)
 	}()
@@ -254,9 +242,7 @@ func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, er
 		return "", err
 	}
 
-	buf := bytes.NewBuffer(pem)
-
-	if _, err = buf.WriteTo(f); err != nil {
+	if _, err = f.Write(pem); err != nil {
 		return "", err
 	}
 
@@ -264,7 +250,10 @@ func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, er
 }
 
 func (d DirCache) writeTempCert(prefix string, cert *tls.Certificate) (string, error) {
-	buf := &bytes.Buffer{}
+	f, err := ioutil.TempFile(string(d), prefix+".cert")
+	if err != nil {
+		return "", err
+	}
 
 	for _, c := range cert.Certificate {
 		block := &pem.Block{
@@ -272,19 +261,10 @@ func (d DirCache) writeTempCert(prefix string, cert *tls.Certificate) (string, e
 			Bytes: c,
 		}
 
-		err := pem.Encode(buf, block)
+		err := pem.Encode(f, block)
 		if err != nil {
 			return "", err
 		}
-	}
-
-	f, err := ioutil.TempFile(string(d), prefix+".cert")
-	if err != nil {
-		return "", err
-	}
-
-	if _, err = buf.WriteTo(f); err != nil {
-		return "", err
 	}
 
 	return f.Name(), f.Close()
