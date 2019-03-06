@@ -157,18 +157,10 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 
 	// Clean up after ourselves on error, remove all artifacts from this request
 	if err != nil {
-		if e := os.Remove(tmpKey); e != nil && !os.IsNotExist(e) {
-			err = fmt.Errorf("failed to delete temp key: %v: %v", e, err)
-		}
-		if e := os.Remove(tmpCert); e != nil && !os.IsNotExist(e) {
-			err = fmt.Errorf("failed to delete temp cert: %v: %v", e, err)
-		}
-		if e := os.Remove(newName + ".key"); e != nil && !os.IsNotExist(e) {
-			err = fmt.Errorf("failed to delete key: %v: %v", e, err)
-		}
-		if e := os.Remove(newName + ".crt"); e != nil && !os.IsNotExist(e) {
-			err = fmt.Errorf("failed to delete cert: %v: %v", e, err)
-		}
+		err = removeWrapErr(tmpKey, err)
+		err = removeWrapErr(tmpCert, err)
+		err = removeWrapErr(newName+".key", err)
+		err = removeWrapErr(newName+".cert", err)
 	}
 
 	return err
@@ -184,17 +176,21 @@ func (d DirCache) Delete(ctx context.Context, name string) error {
 	go func() {
 		defer close(done)
 
-		if e := os.Remove(name + ".key"); e != nil && !os.IsNotExist(e) {
-			err = fmt.Errorf("failed to delete key: %v: %v", e, err)
-		}
-		if e := os.Remove(name + ".cert"); e != nil && !os.IsNotExist(e) {
-			err = fmt.Errorf("failed to delete cert: %v: %v", e, err)
-		}
+		err = removeWrapErr(name+".key", err)
+		err = removeWrapErr(name+".cert", err)
 	}()
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-done:
+	}
+
+	return err
+}
+
+func removeWrapErr(fileName string, err error) error {
+	if e := os.Remove(fileName); e != nil && !os.IsNotExist(e) {
+		err = fmt.Errorf("failed to delete %s: %v: %v", fileName, e, err)
 	}
 
 	return err
