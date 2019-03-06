@@ -2,28 +2,22 @@ package certify
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rsa"
 	"crypto/tls"
-	"encoding/gob"
+	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/johanbrandhorst/certify/internal/keys"
 )
 
-func init() {
-	gob.Register(rsa.PrivateKey{})
-	gob.Register(rsa.PublicKey{})
-	gob.Register(ecdsa.PrivateKey{})
-	gob.Register(ecdsa.PublicKey{})
-	gob.Register(elliptic.P224())
-	gob.Register(elliptic.P256())
-	gob.Register(elliptic.P384())
-	gob.Register(elliptic.P521())
-}
+const (
+	keyExt  = ".key"
+	certExt = ".crt"
+)
 
 // Cache describes the interface that certificate caches must implement.
 // Cache implementations must be thread safe.
@@ -103,14 +97,8 @@ func (d DirCache) Get(ctx context.Context, name string) (*tls.Certificate, error
 	)
 
 	go func() {
-		defer close(done)
-		var f *os.File
-		f, err = os.Open(name)
-		if err != nil {
-			return
-		}
-		err = gob.NewDecoder(f).Decode(&cert)
-		_ = f.Close()
+		cert, err = tls.LoadX509KeyPair(name+certExt, name+keyExt)
+		close(done)
 	}()
 
 	select {
@@ -137,12 +125,16 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	}
 
 	done := make(chan struct{})
-	var err error
+	var (
+		err             error
+		tmpKey, tmpCert string
+		newName         = filepath.Join(string(d), name)
+	)
 	go func() {
 		defer close(done)
 
-		var tmp string
-		if tmp, err = d.writeTempFile(name, cert); err != nil {
+		var tmpKey, tmpCert string
+		if tmpKey, tmpCert, err = d.writeTempFiles(name, cert); err != nil {
 			return
 		}
 
@@ -151,7 +143,14 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 			// Don't overwrite the file if the context was canceled.
 		default:
 			newName := filepath.Join(string(d), name)
-			err = os.Rename(tmp, newName)
+			err = os.Rename(tmpKey, newName+keyExt)
+			if err != nil {
+				return
+			}
+			err = os.Rename(tmpCert, newName+certExt)
+			if err != nil {
+				return
+			}
 		}
 	}()
 
@@ -159,6 +158,14 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-done:
+	}
+
+	// Clean up after ourselves on error, remove all artifacts from this request
+	if err != nil {
+		err = removeWrapErr(tmpKey, err)
+		err = removeWrapErr(tmpCert, err)
+		err = removeWrapErr(newName+keyExt, err)
+		err = removeWrapErr(newName+certExt, err)
 	}
 
 	return err
@@ -172,30 +179,79 @@ func (d DirCache) Delete(ctx context.Context, name string) error {
 		done = make(chan struct{})
 	)
 	go func() {
-		err = os.Remove(name)
-		close(done)
+		defer close(done)
+
+		err = removeWrapErr(name+keyExt, err)
+		err = removeWrapErr(name+certExt, err)
 	}()
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-done:
 	}
-	if err != nil && !os.IsNotExist(err) {
-		return err
+
+	return err
+}
+
+func removeWrapErr(fileName string, err error) error {
+	if e := os.Remove(fileName); e != nil && !os.IsNotExist(e) {
+		err = fmt.Errorf("failed to delete %s: %v: %v", fileName, e, err)
 	}
-	return nil
+
+	return err
 }
 
 // writeTempFile writes b to a temporary file, closes the file and returns its path.
-func (d DirCache) writeTempFile(prefix string, cert *tls.Certificate) (string, error) {
-	// TempFile uses 0600 permissions
-	f, err := ioutil.TempFile(string(d), prefix)
+func (d DirCache) writeTempFiles(prefix string, cert *tls.Certificate) (string, string, error) {
+	keyPath, err := d.writeTempKey(prefix, cert)
+	if err != nil {
+		return "", "", err
+	}
+
+	certPath, err := d.writeTempCert(prefix, cert)
+	if err != nil {
+		return "", "", err
+	}
+
+	return keyPath, certPath, err
+}
+
+func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, error) {
+	pem, err := keys.Marshal(cert.PrivateKey)
 	if err != nil {
 		return "", err
 	}
-	if err = gob.NewEncoder(f).Encode(cert); err != nil {
-		_ = f.Close()
+
+	// TempFile uses 0600 permissions
+	f, err := ioutil.TempFile(string(d), prefix+keyExt)
+	if err != nil {
 		return "", err
 	}
+
+	if _, err = f.Write(pem); err != nil {
+		return "", err
+	}
+
+	return f.Name(), f.Close()
+}
+
+func (d DirCache) writeTempCert(prefix string, cert *tls.Certificate) (string, error) {
+	f, err := ioutil.TempFile(string(d), prefix+certExt)
+	if err != nil {
+		return "", err
+	}
+
+	for _, c := range cert.Certificate {
+		block := &pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: c,
+		}
+
+		err := pem.Encode(f, block)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	return f.Name(), f.Close()
 }
