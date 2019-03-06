@@ -14,6 +14,11 @@ import (
 	"github.com/johanbrandhorst/certify/internal/keys"
 )
 
+const (
+	keyExt  = ".key"
+	certExt = ".crt"
+)
+
 // Cache describes the interface that certificate caches must implement.
 // Cache implementations must be thread safe.
 type Cache interface {
@@ -92,7 +97,7 @@ func (d DirCache) Get(ctx context.Context, name string) (*tls.Certificate, error
 	)
 
 	go func() {
-		cert, err = tls.LoadX509KeyPair(name+".cert", name+".key")
+		cert, err = tls.LoadX509KeyPair(name+certExt, name+keyExt)
 		close(done)
 	}()
 
@@ -138,11 +143,11 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 			// Don't overwrite the file if the context was canceled.
 		default:
 			newName := filepath.Join(string(d), name)
-			err = os.Rename(tmpKey, newName+".key")
+			err = os.Rename(tmpKey, newName+keyExt)
 			if err != nil {
 				return
 			}
-			err = os.Rename(tmpCert, newName+".cert")
+			err = os.Rename(tmpCert, newName+certExt)
 			if err != nil {
 				return
 			}
@@ -159,8 +164,8 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	if err != nil {
 		err = removeWrapErr(tmpKey, err)
 		err = removeWrapErr(tmpCert, err)
-		err = removeWrapErr(newName+".key", err)
-		err = removeWrapErr(newName+".cert", err)
+		err = removeWrapErr(newName+keyExt, err)
+		err = removeWrapErr(newName+certExt, err)
 	}
 
 	return err
@@ -176,8 +181,8 @@ func (d DirCache) Delete(ctx context.Context, name string) error {
 	go func() {
 		defer close(done)
 
-		err = removeWrapErr(name+".key", err)
-		err = removeWrapErr(name+".cert", err)
+		err = removeWrapErr(name+keyExt, err)
+		err = removeWrapErr(name+certExt, err)
 	}()
 	select {
 	case <-ctx.Done():
@@ -218,7 +223,7 @@ func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, er
 	}
 
 	// TempFile uses 0600 permissions
-	f, err := ioutil.TempFile(string(d), prefix+".key")
+	f, err := ioutil.TempFile(string(d), prefix+keyExt)
 	if err != nil {
 		return "", err
 	}
@@ -231,7 +236,7 @@ func (d DirCache) writeTempKey(prefix string, cert *tls.Certificate) (string, er
 }
 
 func (d DirCache) writeTempCert(prefix string, cert *tls.Certificate) (string, error) {
-	f, err := ioutil.TempFile(string(d), prefix+".cert")
+	f, err := ioutil.TempFile(string(d), prefix+certExt)
 	if err != nil {
 		return "", err
 	}
