@@ -6,12 +6,11 @@ import (
 	"crypto/tls"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/johanbrandhorst/certify/internal/keys"
 )
@@ -186,16 +185,16 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 	// Clean up after ourselves on error, remove all artifacts from this request
 	if err != nil {
 		if e := os.Remove(tmpKey); e != nil && !os.IsNotExist(e) {
-			err = multierror.Append(err, e)
+			err = fmt.Errorf("failed to delete temp key: %v: %v", e, err)
 		}
 		if e := os.Remove(tmpCert); e != nil && !os.IsNotExist(e) {
-			err = multierror.Append(err, e)
+			err = fmt.Errorf("failed to delete temp cert: %v: %v", e, err)
 		}
 		if e := os.Remove(newName + ".key"); e != nil && !os.IsNotExist(e) {
-			err = multierror.Append(err, e)
+			err = fmt.Errorf("failed to delete key: %v: %v", e, err)
 		}
 		if e := os.Remove(newName + ".crt"); e != nil && !os.IsNotExist(e) {
-			err = multierror.Append(err, e)
+			err = fmt.Errorf("failed to delete cert: %v: %v", e, err)
 		}
 	}
 
@@ -206,17 +205,17 @@ func (d DirCache) Put(ctx context.Context, name string, cert *tls.Certificate) e
 func (d DirCache) Delete(ctx context.Context, name string) error {
 	name = filepath.Join(string(d), name)
 	var (
-		result error
-		done   = make(chan struct{})
+		err  error
+		done = make(chan struct{})
 	)
 	go func() {
 		defer close(done)
 
-		if err := os.Remove(name + ".key"); err != nil && !os.IsNotExist(err) {
-			result = multierror.Append(result, err)
+		if e := os.Remove(name + ".key"); e != nil && !os.IsNotExist(e) {
+			err = fmt.Errorf("failed to delete key: %v: %v", e, err)
 		}
-		if err := os.Remove(name + ".cert"); err != nil && !os.IsNotExist(err) {
-			result = multierror.Append(result, err)
+		if e := os.Remove(name + ".cert"); e != nil && !os.IsNotExist(e) {
+			err = fmt.Errorf("failed to delete cert: %v: %v", e, err)
 		}
 	}()
 	select {
@@ -225,7 +224,7 @@ func (d DirCache) Delete(ctx context.Context, name string) error {
 	case <-done:
 	}
 
-	return result
+	return err
 }
 
 // writeTempFile writes b to a temporary file, closes the file and returns its path.
