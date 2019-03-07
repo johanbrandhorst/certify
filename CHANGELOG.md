@@ -1,5 +1,18 @@
 # Change Log
 
+## [v1.1.4](https://github.com/johanbrandhorst/certify/tree/v1.1.4) (2019-03-06)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.3...v1.1.4)
+
+**Merged pull requests:**
+
+- Remove golangci-lint job [\#61](https://github.com/johanbrandhorst/certify/pull/61) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Update golangci-lint version [\#60](https://github.com/johanbrandhorst/certify/pull/60) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- switch dir cache away from gob to marshalling pem-encoded certs and keys [\#59](https://github.com/johanbrandhorst/certify/pull/59) ([jlindsey](https://github.com/jlindsey))
+- add Users section to README [\#57](https://github.com/johanbrandhorst/certify/pull/57) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- adds public key types to Gob registry [\#56](https://github.com/johanbrandhorst/certify/pull/56) ([jlindsey](https://github.com/jlindsey))
+- Nicer badges! [\#55](https://github.com/johanbrandhorst/certify/pull/55) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- main: update changelog for v1.1.3 [\#53](https://github.com/johanbrandhorst/certify/pull/53) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.1.3](https://github.com/johanbrandhorst/certify/tree/v1.1.3) (2019-03-01)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.2...v1.1.3)
 
