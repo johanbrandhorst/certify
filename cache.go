@@ -98,6 +98,14 @@ func (d DirCache) Get(ctx context.Context, name string) (*tls.Certificate, error
 
 	go func() {
 		cert, err = tls.LoadX509KeyPair(name+certExt, name+keyExt)
+		if err == nil {
+			// Need to parse the Leaf manually for expiration checks
+			var leaf *x509.Certificate
+			leaf, err = x509.ParseCertificate(cert.Certificate[0])
+			if err == nil {
+				cert.Leaf = leaf
+			}
+		}
 		close(done)
 	}()
 
