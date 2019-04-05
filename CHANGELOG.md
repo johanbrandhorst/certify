@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.1.5](https://github.com/johanbrandhorst/certify/tree/v1.1.5) (2019-04-05)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.4...v1.1.5)
+
+**Merged pull requests:**
+
+- Fixes missing Leaf in cert [\#64](https://github.com/johanbrandhorst/certify/pull/64) ([jlindsey](https://github.com/jlindsey))
+- main: update changelog for v1.1.4 [\#62](https://github.com/johanbrandhorst/certify/pull/62) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.1.4](https://github.com/johanbrandhorst/certify/tree/v1.1.4) (2019-03-06)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.3...v1.1.4)
 
