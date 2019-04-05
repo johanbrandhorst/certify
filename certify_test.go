@@ -62,6 +62,7 @@ var _ = Describe("Caches", func() {
 						Expect(c.Cache.Put(context.Background(), "key1", cert)).To(Succeed())
 						cached, err := c.Cache.Get(context.Background(), "key1")
 						Expect(err).To(Succeed())
+						Expect(cached.Leaf).To(Not(BeNil()))
 						Expect(cached).To(BeEquivalentTo(cert))
 						Expect(c.Cache.Delete(context.Background(), "key1")).To(Succeed())
 						_, err = c.Cache.Get(context.Background(), "key1")
