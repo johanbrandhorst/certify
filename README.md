@@ -6,6 +6,7 @@
 [![Code Coverage](https://img.shields.io/codecov/c/github/johanbrandhorst/certify/master.svg?style=flat-square)](https://codecov.io/gh/johanbrandhorst/certify)
 [![Releases](https://img.shields.io/github/release/johanbrandhorst/certify.svg?style=flat-square)](https://github.com/johanbrandhorst/certify/releases)
 [![License](https://img.shields.io/github/license/johanbrandhorst/certify.svg?style=flat-square)](LICENSE)
+[![Join the chat at https://gitter.im/go-certify/community](https://img.shields.io/gitter/room/go-certify/community.svg?style=flat-square)](https://gitter.im/go-certify/community)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify.svg?type=small)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify?ref=badge_small)
 
 ![Certify](logo.png "Certify")
