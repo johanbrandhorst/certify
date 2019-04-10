@@ -100,4 +100,4 @@ My presentation at the London HashiCorp meetup has more information:
 [![Certify presentation](https://img.youtube.com/vi/4We8yg9yefA/0.jpg)](https://www.youtube.com/watch?v=4We8yg9yefA&t=536)
 
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify?ref=badge_large)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fjohanbrandhorst%2Fcertify?ref=badge_large) [![Join the chat at https://gitter.im/go-certify/community](https://badges.gitter.im/go-certify/community.svg)](https://gitter.im/go-certify/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
