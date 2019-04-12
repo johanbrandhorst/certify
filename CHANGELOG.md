@@ -1,10 +1,23 @@
 # Change Log
 
+## [v1.2.0](https://github.com/johanbrandhorst/certify/tree/v1.2.0) (2019-04-12)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.5...v1.2.0)
+
+**Implemented enhancements:**
+
+- Create submodules for issuers [\#67](https://github.com/johanbrandhorst/certify/issues/67)
+
+**Merged pull requests:**
+
+- Clean up go modules. [\#68](https://github.com/johanbrandhorst/certify/pull/68) ([SpeedyCoder](https://github.com/SpeedyCoder))
+- Add a Gitter chat badge to README.md [\#66](https://github.com/johanbrandhorst/certify/pull/66) ([gitter-badger](https://github.com/gitter-badger))
+
 ## [v1.1.5](https://github.com/johanbrandhorst/certify/tree/v1.1.5) (2019-04-05)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.4...v1.1.5)
 
 **Merged pull requests:**
 
+- main: update changelog for v1.1.5 [\#65](https://github.com/johanbrandhorst/certify/pull/65) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Fixes missing Leaf in cert [\#64](https://github.com/johanbrandhorst/certify/pull/64) ([jlindsey](https://github.com/jlindsey))
 - main: update changelog for v1.1.4 [\#62](https://github.com/johanbrandhorst/certify/pull/62) ([johanbrandhorst](https://github.com/johanbrandhorst))
 
