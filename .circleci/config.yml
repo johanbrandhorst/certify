@@ -30,6 +30,7 @@ jobs:
       - run: GO111MODULE=on go mod vendor
       - run: go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
       - run: go generate -x ./...
+      - run: GO111MODULE=on go mod tidy
       - run: git diff --exit-code
   test:
     machine:
