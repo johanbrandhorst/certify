@@ -3,13 +3,12 @@
 
 package proto
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-
 import (
-	context "golang.org/x/net/context"
+	context "context"
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -21,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Void struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -33,16 +32,17 @@ func (m *Void) Reset()         { *m = Void{} }
 func (m *Void) String() string { return proto.CompactTextString(m) }
 func (*Void) ProtoMessage()    {}
 func (*Void) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_b2710fa25edf7170, []int{0}
+	return fileDescriptor_fc70169f84046e97, []int{0}
 }
+
 func (m *Void) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Void.Unmarshal(m, b)
 }
 func (m *Void) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Void.Marshal(b, m, deterministic)
 }
-func (dst *Void) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Void.Merge(dst, src)
+func (m *Void) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Void.Merge(m, src)
 }
 func (m *Void) XXX_Size() int {
 	return xxx_messageInfo_Void.Size(m)
@@ -55,6 +55,18 @@ var xxx_messageInfo_Void proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*Void)(nil), "proto.Void")
+}
+
+func init() { proto.RegisterFile("proto/test.proto", fileDescriptor_fc70169f84046e97) }
+
+var fileDescriptor_fc70169f84046e97 = []byte{
+	// 83 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x28, 0x28, 0xca, 0x2f,
+	0xc9, 0xd7, 0x2f, 0x49, 0x2d, 0x2e, 0xd1, 0x03, 0x33, 0x85, 0x58, 0xc1, 0x94, 0x12, 0x1b, 0x17,
+	0x4b, 0x58, 0x7e, 0x66, 0x8a, 0x91, 0x16, 0x17, 0x4b, 0x48, 0x6a, 0x71, 0x89, 0x90, 0x12, 0x17,
+	0x4b, 0x40, 0x66, 0x5e, 0xba, 0x10, 0x37, 0x44, 0x99, 0x1e, 0x48, 0x52, 0x0a, 0x99, 0xa3, 0xc4,
+	0x90, 0xc4, 0x06, 0xe6, 0x19, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x1c, 0x56, 0x8e, 0xf2, 0x55,
+	0x00, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -127,16 +139,4 @@ var _Test_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/test.proto",
-}
-
-func init() { proto.RegisterFile("proto/test.proto", fileDescriptor_test_b2710fa25edf7170) }
-
-var fileDescriptor_test_b2710fa25edf7170 = []byte{
-	// 83 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x28, 0x28, 0xca, 0x2f,
-	0xc9, 0xd7, 0x2f, 0x49, 0x2d, 0x2e, 0xd1, 0x03, 0x33, 0x85, 0x58, 0xc1, 0x94, 0x12, 0x1b, 0x17,
-	0x4b, 0x58, 0x7e, 0x66, 0x8a, 0x91, 0x16, 0x17, 0x4b, 0x48, 0x6a, 0x71, 0x89, 0x90, 0x12, 0x17,
-	0x4b, 0x40, 0x66, 0x5e, 0xba, 0x10, 0x37, 0x44, 0x99, 0x1e, 0x48, 0x52, 0x0a, 0x99, 0xa3, 0xc4,
-	0x90, 0xc4, 0x06, 0xe6, 0x19, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0x1c, 0x56, 0x8e, 0xf2, 0x55,
-	0x00, 0x00, 0x00,
 }
