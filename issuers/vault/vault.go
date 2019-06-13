@@ -38,6 +38,10 @@ type Issuer struct {
 	// TimeToLive configures the lifetime of certificates
 	// requested from the Vault server.
 	TimeToLive time.Duration
+
+	// URISubjectAlternativeNames defines custom URI SANs.
+	URISubjectAlternativeNames []string
+
 	// OtherSubjectAlternativeNames defines custom OID/UTF8-string SANs.
 	// The format is the same as OpenSSL: <oid>;<type>:<value> where the only current valid <type> is UTF8.
 	OtherSubjectAlternativeNames []string
@@ -93,6 +97,7 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		CommonName:        commonName,
 		ExcludeCNFromSANS: true,
 		Format:            "pem",
+		URISans:           v.URISubjectAlternativeNames,
 		OtherSans:         v.OtherSubjectAlternativeNames,
 		TimeToLive:        ttl(v.TimeToLive),
 	}
