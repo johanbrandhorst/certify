@@ -31,12 +31,13 @@ func TestVault(t *testing.T) {
 }
 
 type vaultConfig struct {
-	Role     string
-	Mount    string
-	Token    string
-	URL      *url.URL
-	CA       *x509.Certificate
-	CertPool *x509.CertPool
+	Role        string
+	RoleURISANs string
+	Mount       string
+	Token       string
+	URL         *url.URL
+	CA          *x509.Certificate
+	CertPool    *x509.CertPool
 }
 
 var (
@@ -73,9 +74,10 @@ var _ = BeforeSuite(func() {
 		Expect(cp.AppendCertsFromPEM(cert)).To(BeTrue())
 		token := "mysecrettoken"
 		role := "test"
+		roleURISANs := "test_uri_sans"
 
 		repo := "vault"
-		version := "1.0.0"
+		version := "1.1.3"
 		img := repo + ":" + version
 		_, err = pool.Client.InspectImage(img)
 		if err != nil {
@@ -191,6 +193,16 @@ var _ = BeforeSuite(func() {
 			})
 			Expect(err).To(Succeed())
 
+			_, err = cli.Logical().Write(mountPoint+"/roles/"+roleURISANs, map[string]interface{}{
+				"allowed_domains":  "myserver.com",
+				"allow_subdomains": true,
+				"allow_any_name":   true,
+				"use_csr_sans":     false,
+				"key_type":         "any",
+				"allowed_uri_sans": "spiffe://hostname/*",
+			})
+			Expect(err).To(Succeed())
+
 			resp, err := cli.Logical().Write(mountPoint+"/root/generate/internal", map[string]interface{}{
 				"ttl":         "87600h",
 				"common_name": "my_vault",
@@ -208,18 +220,20 @@ var _ = BeforeSuite(func() {
 		}
 
 		vaultConf = vaultConfig{
-			Token: token,
-			Role:  role,
+			Token:       token,
+			Role:        role,
+			RoleURISANs: roleURISANs,
 			URL: &url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, "8200"),
 			},
 		}
 		vaultTLSConf = vaultConfig{
-			Token:    token,
-			Role:     role,
-			CertPool: cp,
-			CA:       vaultCA,
+			Token:       token,
+			Role:        role,
+			RoleURISANs: roleURISANs,
+			CertPool:    cp,
+			CA:          vaultCA,
 			URL: &url.URL{
 				Scheme: "https",
 				Host:   net.JoinHostPort(host, "8201"),

@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/vault/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spiffe/go-spiffe/uri"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
@@ -69,6 +70,44 @@ var _ = Describe("Vault Issuer", func() {
 
 		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+	})
+
+	Context("with URI SANs", func() {
+		BeforeEach(func() {
+			iss = &vault.Issuer{
+				URL:   vaultTLSConf.URL,
+				Token: vaultTLSConf.Token,
+				Role:  vaultTLSConf.RoleURISANs,
+				TLSConfig: &tls.Config{
+					RootCAs: vaultTLSConf.CertPool,
+				},
+				TimeToLive:                 time.Minute * 10,
+				URISubjectAlternativeNames: []string{"spiffe://hostname/testing"},
+			}
+		})
+
+		It("issues a certificate", func() {
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			certURIs, err := uri.GetURINamesFromCertificate(tlsCert.Leaf)
+			Expect(err).To(Succeed())
+			Expect(certURIs).To(Equal([]string{"spiffe://hostname/testing"}))
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		})
 	})
 
 	Context("with a non-standard mount point", func() {
