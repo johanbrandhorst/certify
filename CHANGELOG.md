@@ -1,5 +1,16 @@
 # Change Log
 
+## [v1.3.0](https://github.com/johanbrandhorst/certify/tree/v1.3.0) (2019-06-18)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.2.0...v1.3.0)
+
+**Implemented enhancements:**
+
+- Implement an issuer for whatever Istio uses under the hood to issue certs [\#39](https://github.com/johanbrandhorst/certify/issues/39)
+
+**Merged pull requests:**
+
+- Add support for URI sans [\#70](https://github.com/johanbrandhorst/certify/pull/70) ([nvx](https://github.com/nvx))
+
 ## [v1.2.0](https://github.com/johanbrandhorst/certify/tree/v1.2.0) (2019-04-12)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.1.5...v1.2.0)
 
@@ -9,6 +20,7 @@
 
 **Merged pull requests:**
 
+- main: update changelog for v1.2.0 [\#69](https://github.com/johanbrandhorst/certify/pull/69) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Clean up go modules. [\#68](https://github.com/johanbrandhorst/certify/pull/68) ([SpeedyCoder](https://github.com/SpeedyCoder))
 - Add a Gitter chat badge to README.md [\#66](https://github.com/johanbrandhorst/certify/pull/66) ([gitter-badger](https://github.com/gitter-badger))
 
