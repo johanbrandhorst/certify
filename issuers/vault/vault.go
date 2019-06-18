@@ -40,6 +40,7 @@ type Issuer struct {
 	TimeToLive time.Duration
 
 	// URISubjectAlternativeNames defines custom URI SANs.
+	// The format is a URI and must match the value specified in allowed_uri_sans, eg spiffe://hostname/foobar
 	URISubjectAlternativeNames []string
 
 	// OtherSubjectAlternativeNames defines custom OID/UTF8-string SANs.
