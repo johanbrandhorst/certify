@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/asn1"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -27,6 +28,35 @@ import (
 	"github.com/johanbrandhorst/certify/issuers/vault/proto"
 )
 
+type otherName struct {
+	TypeID asn1.ObjectIdentifier
+	Value  string `asn1:"explicit,utf8"`
+}
+
+func getOtherNames(cert *x509.Certificate) (otherNames []otherName, err error) {
+	for _, ext := range uri.GetExtensionsFromAsn1ObjectIdentifier(cert, uri.OidExtensionSubjectAltName) {
+		var altName asn1.RawValue
+		_, _ = asn1.Unmarshal(ext.Value, &altName)
+		if altName.Class == asn1.ClassUniversal && altName.Tag == asn1.TagSequence {
+			data := altName.Bytes
+			for len(data) > 0 {
+				var alt asn1.RawValue
+				data, _ = asn1.Unmarshal(data, &alt)
+				if alt.Class == asn1.ClassContextSpecific && alt.Tag == 0 {
+					var oName otherName
+					_, err = asn1.UnmarshalWithParams(alt.FullBytes, &oName, "tag:0")
+					if err != nil {
+						return
+					}
+					otherNames = append(otherNames, oName)
+				}
+			}
+		}
+	}
+
+	return otherNames, nil
+}
+
 //go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
 
 var _ = Describe("Vault Issuer", func() {
@@ -42,8 +72,8 @@ var _ = Describe("Vault Issuer", func() {
 				RootCAs: vaultTLSConf.CertPool,
 			},
 			TimeToLive: time.Minute * 10,
-			// No idea how to format this. Copied from
-			// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
+			// Format is "<type_id>;utf8:<value>", where type_id
+			// is an ASN.1 object identifier.
 			OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
 		}
 		conf = &certify.CertConfig{
@@ -70,6 +100,10 @@ var _ = Describe("Vault Issuer", func() {
 
 		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+			TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+			Value:  "devops@nope.com",
+		}))
 	})
 
 	Context("with URI SANs", func() {
@@ -121,8 +155,8 @@ var _ = Describe("Vault Issuer", func() {
 					RootCAs: vaultTLSConf.CertPool,
 				},
 				TimeToLive: time.Minute * 10,
-				// No idea how to format this. Copied from
-				// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
+				// Format is "<type_id>;utf8:<value>", where type_id
+				// is an ASN.1 object identifier.
 				OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
 			}
 		})
@@ -144,6 +178,10 @@ var _ = Describe("Vault Issuer", func() {
 
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+				TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+				Value:  "devops@nope.com",
+			}))
 		})
 	})
 
@@ -172,6 +210,10 @@ var _ = Describe("Vault Issuer", func() {
 
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+				TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+				Value:  "devops@nope.com",
+			}))
 		})
 	})
 
@@ -195,6 +237,10 @@ var _ = Describe("Vault Issuer", func() {
 
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(defaultTTL), 5*time.Second))
+			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+				TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+				Value:  "devops@nope.com",
+			}))
 		})
 	})
 })
@@ -209,8 +255,8 @@ var _ = Describe("Vault HTTP Issuer", func() {
 			Token:      vaultConf.Token,
 			Role:       vaultConf.Role,
 			TimeToLive: time.Minute * 10,
-			// No idea how to format this. Copied from
-			// https://github.com/hashicorp/vault/blob/abb8b41331573efdbfad3505b7ad2c81ef6d19c0/builtin/logical/pki/backend_test.go#L3135
+			// Format is "<type_id>;utf8:<value>", where type_id
+			// is an ASN.1 object identifier.
 			OtherSubjectAlternativeNames: []string{"1.3.6.1.4.1.311.20.2.3;utf8:devops@nope.com"},
 		}
 		conf = &certify.CertConfig{
@@ -237,6 +283,10 @@ var _ = Describe("Vault HTTP Issuer", func() {
 
 		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+			TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+			Value:  "devops@nope.com",
+		}))
 	})
 
 	Context("when specifying some SANs, IPSANs", func() {
@@ -264,6 +314,10 @@ var _ = Describe("Vault HTTP Issuer", func() {
 
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+				TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+				Value:  "devops@nope.com",
+			}))
 		})
 	})
 
@@ -287,6 +341,10 @@ var _ = Describe("Vault HTTP Issuer", func() {
 
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(defaultTTL), 5*time.Second))
+			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+				TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+				Value:  "devops@nope.com",
+			}))
 		})
 	})
 })
