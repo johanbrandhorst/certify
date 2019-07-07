@@ -6,6 +6,7 @@ package mocks
 import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
+	"github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface"
 	"sync"
 )
 
@@ -34,6 +35,10 @@ var (
 	lockACMPCAAPIMockWaitUntilCertificateIssued                         sync.RWMutex
 	lockACMPCAAPIMockWaitUntilCertificateIssuedWithContext              sync.RWMutex
 )
+
+// Ensure, that ACMPCAAPIMock does implement ACMPCAAPI.
+// If this is not the case, regenerate this file with moq.
+var _ acmpcaiface.ACMPCAAPI = &ACMPCAAPIMock{}
 
 // ACMPCAAPIMock is a mock implementation of ACMPCAAPI.
 //

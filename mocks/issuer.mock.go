@@ -14,6 +14,10 @@ var (
 	lockIssuerMockIssue sync.RWMutex
 )
 
+// Ensure, that IssuerMock does implement Issuer.
+// If this is not the case, regenerate this file with moq.
+var _ certify.Issuer = &IssuerMock{}
+
 // IssuerMock is a mock implementation of Issuer.
 //
 //     func TestSomethingThatUsesIssuer(t *testing.T) {
