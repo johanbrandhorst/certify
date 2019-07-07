@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net"
@@ -25,6 +26,7 @@ import (
 )
 
 //go:generate moq -out mocks/issuer.mock.go -pkg mocks . Issuer
+//go:generate moq -out mocks/logger.mock.go -pkg mocks . Logger
 
 var _ = Describe("Caches", func() {
 	// Note: this setup step doesn't clean
@@ -120,6 +122,14 @@ var _ = Describe("Certify", func() {
 	It("issues a valid certificate", func() {
 		serverName := "myotherserver.com"
 		issuer := &mocks.IssuerMock{}
+		logger := &mocks.LoggerMock{
+			ErrorFunc: func(msg string, args ...map[string]interface{}) {
+				fmt.Fprintf(GinkgoWriter, msg+": %v\n", args)
+			},
+			DebugFunc: func(msg string, args ...map[string]interface{}) {
+				fmt.Fprintf(GinkgoWriter, msg+": %v\n", args)
+			},
+		}
 		cli := &certify.Certify{
 			CommonName: "myserver.com",
 			Issuer:     issuer,
@@ -127,6 +137,7 @@ var _ = Describe("Certify", func() {
 				SubjectAlternativeNames:   []string{"extraname.com"},
 				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
 			},
+			Logger: logger,
 		}
 		issuer.IssueFunc = func(in1 context.Context, in2 string, in3 *certify.CertConfig) (*tls.Certificate, error) {
 			defer GinkgoRecover()
@@ -151,11 +162,21 @@ var _ = Describe("Certify", func() {
 			Expect(err).To(Succeed())
 			Expect(pk).To(BeAssignableToTypeOf(&ecdsa.PrivateKey{}))
 			Expect(pk.(*ecdsa.PrivateKey).Params().BitSize).To(BeEquivalentTo(256))
-			return &tls.Certificate{}, nil
+			return &tls.Certificate{
+				Leaf: &x509.Certificate{
+					SerialNumber: big.NewInt(123456),
+					NotAfter:     time.Now().Add(time.Hour),
+				},
+			}, nil
 		}
 
 		_, err := cli.GetCertificate(&tls.ClientHelloInfo{
 			ServerName: serverName,
+			Conn: &mocks.ConnMock{
+				Remote: mocks.AddrMock{
+					S: "127.0.0.1",
+				},
+			},
 		})
 		Expect(err).To(Succeed())
 		_, err = cli.GetClientCertificate(nil)
@@ -183,13 +204,19 @@ var _ = Describe("Certify", func() {
 				})))
 				return &tls.Certificate{
 					Leaf: &x509.Certificate{
-						NotAfter: time.Now().Add(time.Minute),
+						SerialNumber: big.NewInt(123456),
+						NotAfter:     time.Now().Add(time.Minute),
 					},
 				}, nil
 			}
 
 			_, err := cli.GetCertificate(&tls.ClientHelloInfo{
 				ServerName: cli.CommonName,
+				Conn: &mocks.ConnMock{
+					Remote: mocks.AddrMock{
+						S: "127.0.0.1",
+					},
+				},
 			})
 			Expect(err).To(Succeed())
 
@@ -219,13 +246,19 @@ var _ = Describe("Certify", func() {
 					})))
 					return &tls.Certificate{
 						Leaf: &x509.Certificate{
-							NotAfter: time.Now().Add(time.Minute),
+							SerialNumber: big.NewInt(123456),
+							NotAfter:     time.Now().Add(time.Minute),
 						},
 					}, nil
 				}
 
 				_, err := cli.GetCertificate(&tls.ClientHelloInfo{
 					ServerName: cli.CommonName,
+					Conn: &mocks.ConnMock{
+						Remote: mocks.AddrMock{
+							S: "127.0.0.1",
+						},
+					},
 				})
 				Expect(err).To(Succeed())
 
@@ -253,11 +286,21 @@ var _ = Describe("Certify", func() {
 					"IPSubjectAlternativeNames": Equal([]net.IP{net.ParseIP(serverName)}),
 					"KeyGenerator":              Not(BeNil()),
 				})))
-				return &tls.Certificate{}, nil
+				return &tls.Certificate{
+					Leaf: &x509.Certificate{
+						SerialNumber: big.NewInt(123456),
+						NotAfter:     time.Now().Add(time.Hour),
+					},
+				}, nil
 			}
 
 			_, err := cli.GetCertificate(&tls.ClientHelloInfo{
 				ServerName: serverName,
+				Conn: &mocks.ConnMock{
+					Remote: mocks.AddrMock{
+						S: "127.0.0.1",
+					},
+				},
 			})
 			Expect(err).To(Succeed())
 			Expect(issuer.IssueCalls()).To(HaveLen(1))
@@ -288,11 +331,21 @@ var _ = Describe("Certify", func() {
 				})))
 				_, err := in3.KeyGenerator.Generate()
 				Expect(err).To(MatchError("test error"))
-				return &tls.Certificate{}, nil
+				return &tls.Certificate{
+					Leaf: &x509.Certificate{
+						SerialNumber: big.NewInt(123456),
+						NotAfter:     time.Now().Add(time.Hour),
+					},
+				}, nil
 			}
 
 			_, err := cli.GetCertificate(&tls.ClientHelloInfo{
 				ServerName: serverName,
+				Conn: &mocks.ConnMock{
+					Remote: mocks.AddrMock{
+						S: "127.0.0.1",
+					},
+				},
 			})
 			Expect(err).To(Succeed())
 			Expect(issuer.IssueCalls()).To(HaveLen(1))
@@ -319,6 +372,7 @@ var _ = Describe("Certify", func() {
 				return &tls.Certificate{
 					Leaf: &x509.Certificate{
 						SerialNumber: big.NewInt(100),
+						NotAfter:     time.Now().Add(time.Hour),
 					},
 				}, nil
 			}

@@ -47,6 +47,12 @@ type Certify struct {
 	// per certificate call. Defaults to 1 minute.
 	IssueTimeout time.Duration
 
+	// Logger configures logging of events such as renewals.
+	// Defaults to no logging. Use one of the adapters in
+	// https://github.com/goph/logur to use with specific
+	// logging libraries, or implement the interface yourself.
+	Logger Logger
+
 	issueGroup singleflight.Group
 	initOnce   sync.Once
 }
@@ -55,11 +61,33 @@ func (c *Certify) init() {
 	if c.Cache == nil {
 		c.Cache = &noopCache{}
 	}
+	if c.Logger == nil {
+		c.Logger = &noopLogger{}
+	}
 }
 
 // GetCertificate implements the GetCertificate TLS config hook.
-func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (cert *tls.Certificate, err error) {
 	c.initOnce.Do(c.init)
+	start := time.Now()
+	c.Logger.Debug("Getting server certificate", map[string]interface{}{
+		"server_name": hello.ServerName,
+		"remote_addr": hello.Conn.RemoteAddr().String(),
+	})
+	defer func() {
+		took := time.Since(start)
+		if err != nil {
+			c.Logger.Error("Error getting server certificate", map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.Logger.Debug("Certificate found", map[string]interface{}{
+			"serial": cert.Leaf.SerialNumber.String(),
+			"took":   took.String(),
+		})
+	}()
+
 	name := strings.ToLower(hello.ServerName)
 	if name == "" {
 		return nil, errors.New("missing server name")
@@ -80,8 +108,23 @@ func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 }
 
 // GetClientCertificate implements the GetClientCertificate TLS config hook.
-func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (cert *tls.Certificate, err error) {
 	c.initOnce.Do(c.init)
+	start := time.Now()
+	c.Logger.Debug("Getting client certificate")
+	defer func() {
+		took := time.Since(start)
+		if err != nil {
+			c.Logger.Error("Error getting client certificate", map[string]interface{}{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.Logger.Debug("Certificate found", map[string]interface{}{
+			"serial": cert.Leaf.SerialNumber.String(),
+			"took":   took.String(),
+		})
+	}()
 	return c.getOrRenewCert(c.CommonName)
 }
 
@@ -99,6 +142,10 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		if time.Now().Before(cert.Leaf.NotAfter.Add(-c.RenewBefore)) {
 			return cert, nil
 		}
+		c.Logger.Debug("Cached certificate found but expiry within renewal threshold", map[string]interface{}{
+			"serial": cert.Leaf.SerialNumber.String(),
+			"expiry": cert.Leaf.NotAfter.Format(time.RFC3339),
+		})
 		// Delete the cert, we want to renew it
 		_ = c.Cache.Delete(ctx, name)
 	} else if err != ErrCacheMiss {
@@ -107,6 +154,7 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 
 	// De-duplicate simultaneous requests
 	ch := c.issueGroup.DoChan("issue", func() (interface{}, error) {
+		c.Logger.Debug("Requesting new certificate from issuer")
 		conf := c.CertConfig.Clone()
 		conf.appendName(name)
 
@@ -126,8 +174,18 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 			return nil, err
 		}
 
-		// Ignore error, it'll just mean we renew again next time
-		_ = c.Cache.Put(ctx, name, cert)
+		c.Logger.Debug("New certificate issued", map[string]interface{}{
+			"serial": cert.Leaf.SerialNumber.String(),
+			"expiry": cert.Leaf.NotAfter.Format(time.RFC3339),
+		})
+
+		err = c.Cache.Put(ctx, name, cert)
+		if err != nil {
+			c.Logger.Error("Failed to save certificate in cache", map[string]interface{}{
+				"error": err.Error(),
+			})
+			// Ignore error, it'll just mean we renew again next time
+		}
 
 		return cert, nil
 	})
