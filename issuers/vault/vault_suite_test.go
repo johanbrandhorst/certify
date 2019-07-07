@@ -243,9 +243,13 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	Expect(waiter.Close()).To(Succeed())
-	Expect(waiter.Wait()).To(Succeed())
-	Expect(pool.Purge(resource)).To(Succeed())
+	if waiter != nil {
+		Expect(waiter.Close()).To(Succeed())
+		Expect(waiter.Wait()).To(Succeed())
+	}
+	if pool != nil {
+		Expect(pool.Purge(resource)).To(Succeed())
+	}
 })
 
 func generateCertAndKey(SAN string, IPSAN net.IP) ([]byte, []byte, error) {
