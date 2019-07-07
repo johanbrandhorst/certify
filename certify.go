@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/singleflight"
@@ -47,10 +48,18 @@ type Certify struct {
 	IssueTimeout time.Duration
 
 	issueGroup singleflight.Group
+	initOnce   sync.Once
+}
+
+func (c *Certify) init() {
+	if c.Cache == nil {
+		c.Cache = &noopCache{}
+	}
 }
 
 // GetCertificate implements the GetCertificate TLS config hook.
 func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	c.initOnce.Do(c.init)
 	name := strings.ToLower(hello.ServerName)
 	if name == "" {
 		return nil, errors.New("missing server name")
@@ -72,6 +81,7 @@ func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 
 // GetClientCertificate implements the GetClientCertificate TLS config hook.
 func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+	c.initOnce.Do(c.init)
 	return c.getOrRenewCert(c.CommonName)
 }
 
@@ -83,18 +93,16 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), issueTimeout)
 	defer cancel()
 
-	if c.Cache != nil {
-		cert, err := c.Cache.Get(ctx, name)
-		if err == nil {
-			// If we're not within the renewal threshold of the expiry, return the cert
-			if time.Now().Before(cert.Leaf.NotAfter.Add(-c.RenewBefore)) {
-				return cert, nil
-			}
-			// Delete the cert, we want to renew it
-			_ = c.Cache.Delete(ctx, name)
-		} else if err != ErrCacheMiss {
-			return nil, err
+	cert, err := c.Cache.Get(ctx, name)
+	if err == nil {
+		// If we're not within the renewal threshold of the expiry, return the cert
+		if time.Now().Before(cert.Leaf.NotAfter.Add(-c.RenewBefore)) {
+			return cert, nil
 		}
+		// Delete the cert, we want to renew it
+		_ = c.Cache.Delete(ctx, name)
+	} else if err != ErrCacheMiss {
+		return nil, err
 	}
 
 	// De-duplicate simultaneous requests
@@ -118,10 +126,8 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 			return nil, err
 		}
 
-		if c.Cache != nil {
-			// Ignore error, it'll just mean we renew again next time
-			_ = c.Cache.Put(ctx, name, cert)
-		}
+		// Ignore error, it'll just mean we renew again next time
+		_ = c.Cache.Put(ctx, name, cert)
 
 		return cert, nil
 	})
