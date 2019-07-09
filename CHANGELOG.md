@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.4.0](https://github.com/johanbrandhorst/certify/tree/v1.4.0) (2019-07-09)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.3.0...v1.4.0)
+
+**Implemented enhancements:**
+
+- Add better tests for OtherSans setting [\#71](https://github.com/johanbrandhorst/certify/issues/71)
+- Try to generate moq in module mode again [\#51](https://github.com/johanbrandhorst/certify/issues/51)
+- Allow a logger to be configured [\#36](https://github.com/johanbrandhorst/certify/issues/36)
+
+**Merged pull requests:**
+
+- Add configurable logger [\#75](https://github.com/johanbrandhorst/certify/pull/75) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Add noopCache to simplify some logic [\#74](https://github.com/johanbrandhorst/certify/pull/74) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Properly validate OtherSANs [\#73](https://github.com/johanbrandhorst/certify/pull/73) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.3.0](https://github.com/johanbrandhorst/certify/tree/v1.3.0) (2019-06-18)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.2.0...v1.3.0)
 
@@ -9,6 +24,7 @@
 
 **Merged pull requests:**
 
+- main: update changelog for v1.3.0 [\#72](https://github.com/johanbrandhorst/certify/pull/72) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Add support for URI sans [\#70](https://github.com/johanbrandhorst/certify/pull/70) ([nvx](https://github.com/nvx))
 
 ## [v1.2.0](https://github.com/johanbrandhorst/certify/tree/v1.2.0) (2019-04-12)
