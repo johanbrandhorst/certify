@@ -11,8 +11,6 @@ jobs:
   vendor:
     docker:
       - image: golang:latest
-    environment:
-      GO111MODULE: 'on'
     steps:
       - checkout
       - run: go mod verify
@@ -21,16 +19,16 @@ jobs:
   generate:
     docker:
       - image: golang:latest
-    # moq requires the GOPATH still
-    working_directory: /go/src/github.com/johanbrandhorst/certify
+    environment:
+      GOFLAGS: "-mod=readonly"
     steps:
       - checkout
       - run: apt-get update
       - run: apt-get install -y protobuf-compiler
-      - run: GO111MODULE=on go mod vendor
+      - run: go mod vendor
       - run: go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
       - run: go generate -x ./...
-      - run: GO111MODULE=on go mod tidy
+      - run: go mod tidy
       - run: git diff --exit-code
   test:
     machine:
