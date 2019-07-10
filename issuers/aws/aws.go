@@ -45,7 +45,7 @@ type Issuer struct {
 }
 
 // Issue issues a certificate from the configured AWS CA backend.
-func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
+func (i *Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
 	if i.caCert == nil {
 		caReq := i.Client.GetCertificateAuthorityCertificateRequest(&acmpca.GetCertificateAuthorityCertificateInput{
 			CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
