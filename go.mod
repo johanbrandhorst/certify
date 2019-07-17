@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/cenkalti/backoff v2.1.1+incompatible // indirect
 	github.com/cloudflare/cfssl v0.0.0-20190409034051-768cd563887f
+	github.com/cloudflare/cloudflare-go v0.9.2
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3 // indirect
@@ -38,7 +39,6 @@ require (
 	github.com/spiffe/go-spiffe v0.0.0-20190518123159-37d000f27824
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
 	google.golang.org/grpc v1.20.0
 	gotest.tools v2.2.0+incompatible // indirect
