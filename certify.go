@@ -49,7 +49,7 @@ type Certify struct {
 
 	// Logger configures logging of events such as renewals.
 	// Defaults to no logging. Use one of the adapters in
-	// https://github.com/goph/logur to use with specific
+	// https://logur.dev/logur to use with specific
 	// logging libraries, or implement the interface yourself.
 	Logger Logger
 
