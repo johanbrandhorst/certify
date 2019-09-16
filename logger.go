@@ -1,7 +1,7 @@
 package certify
 
 // Logger must be implemented to log events. See
-// https://github.com/goph/logur for some adapters
+// https://logur.dev/logur for some adapters
 // for popular logging libraries.
 type Logger interface {
 	Trace(msg string, fields ...map[string]interface{})
