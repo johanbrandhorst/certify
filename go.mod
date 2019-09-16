@@ -23,6 +23,7 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/vault v1.1.1
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.0.0 // indirect
 	github.com/matryer/moq v0.0.0-20190312154309-6cfb0558e1bd
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
@@ -34,7 +35,7 @@ require (
 	github.com/ory/dockertest v3.3.4+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	github.com/sirupsen/logrus v1.4.2 // indirect
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spiffe/go-spiffe v0.0.0-20190518123159-37d000f27824
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
@@ -42,4 +43,5 @@ require (
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
 	google.golang.org/grpc v1.20.0
 	gotest.tools v2.2.0+incompatible // indirect
+	logur.dev/adapter/logrus v0.2.0
 )
