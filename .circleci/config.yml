@@ -3,8 +3,6 @@ jobs:
   build:
     docker:
       - image: golang:latest
-    environment:
-      GO111MODULE: 'on'
     steps:
       - checkout
       - run: go build ./...
@@ -18,30 +16,30 @@ jobs:
       - run: git diff --exit-code
   generate:
     docker:
-      - image: golang:latest
+      - image: golang:1.12 # moq doesn't work with 1.13 https://github.com/matryer/moq/issues/103
     environment:
-      GOFLAGS: "-mod=readonly"
+      GO111MODULE: "on"
+      GOPROXY: "https://proxy.golang.org"
     steps:
       - checkout
       - run: apt-get update
       - run: apt-get install -y protobuf-compiler
-      - run: go mod vendor
-      - run: go install ./vendor/github.com/golang/protobuf/protoc-gen-go ./vendor/github.com/matryer/moq
+      - run: go install github.com/golang/protobuf/protoc-gen-go github.com/matryer/moq
+      - run: go mod vendor # for AWS interface mock generation
       - run: go generate -x ./...
       - run: go mod tidy
       - run: git diff --exit-code
   test:
     machine:
       image: circleci/classic:edge
-    # The CircleCI users GOPATH
+    # The CircleCI user's GOPATH
     working_directory: /home/circleci/.go_workspace/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
       - run: go get github.com/lpar/goup
       - run: sudo rm -rf /usr/local/go
       - run: yes | sudo /home/circleci/.go_workspace/bin/goup --force --os linux --arch amd64 || true # swallow exit 141
-      - run: GO111MODULE=on go mod vendor
-      - run: go install ./vendor/github.com/onsi/ginkgo/ginkgo
+      - run: go install github.com/onsi/ginkgo/ginkgo
       - run: ginkgo -v -r -coverprofile=coverage.txt -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
