@@ -42,6 +42,13 @@ jobs:
       - run: go install github.com/onsi/ginkgo/ginkgo
       - run: ginkgo -v -r -coverprofile=coverage.txt -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements
       - run: bash <(curl -s https://codecov.io/bash)
+  docker:
+    docker:
+      - image: docker
+    steps:
+      - setup_remote_docker
+      - checkout
+      - run: docker build .
 workflows:
   version: 2
   all:
@@ -50,3 +57,4 @@ workflows:
       - vendor
       - generate
       - test
+      - docker
