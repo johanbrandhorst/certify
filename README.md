@@ -85,6 +85,14 @@ tlsConfig := &tls.Config{
 For an end-to-end example using gRPC with mutual TLS authentication,
 see the [Vault tests](./issuers/vault/vault_test.go).
 
+## Docker image (sidecar model)
+
+If you really want to use Certify but you are not able to use Go, there is
+now a [Docker image](https://hub.docker.com/r/jfbrandhorst/certify) available!
+
+Simply configure this image as the access point for your Kubernetes pod and
+let it proxy traffic to your server.
+
 ## How does it work?
 
 ![How it works](howitworks.svg "How it works")
