@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.5.0](https://github.com/johanbrandhorst/certify/tree/v1.5.0) (2019-09-17)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.4.0...v1.5.0)
+
+**Merged pull requests:**
+
+- Add sidecar container [\#79](https://github.com/johanbrandhorst/certify/pull/79) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.4.0](https://github.com/johanbrandhorst/certify/tree/v1.4.0) (2019-07-09)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.3.0...v1.4.0)
 
@@ -11,6 +18,7 @@
 
 **Merged pull requests:**
 
+- main: Update changelog for v1.4.0 [\#76](https://github.com/johanbrandhorst/certify/pull/76) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Add configurable logger [\#75](https://github.com/johanbrandhorst/certify/pull/75) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Add noopCache to simplify some logic [\#74](https://github.com/johanbrandhorst/certify/pull/74) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Properly validate OtherSANs [\#73](https://github.com/johanbrandhorst/certify/pull/73) ([johanbrandhorst](https://github.com/johanbrandhorst))
