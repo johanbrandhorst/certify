@@ -69,23 +69,13 @@ func (c *Certify) init() {
 // GetCertificate implements the GetCertificate TLS config hook.
 func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (cert *tls.Certificate, err error) {
 	c.initOnce.Do(c.init)
-	start := time.Now()
-	c.Logger.Debug("Getting server certificate", map[string]interface{}{
-		"server_name": hello.ServerName,
-		"remote_addr": hello.Conn.RemoteAddr().String(),
-	})
 	defer func() {
-		took := time.Since(start)
 		if err != nil {
 			c.Logger.Error("Error getting server certificate", map[string]interface{}{
 				"error": err.Error(),
 			})
 			return
 		}
-		c.Logger.Debug("Certificate found", map[string]interface{}{
-			"serial": cert.Leaf.SerialNumber.String(),
-			"took":   took.String(),
-		})
 	}()
 
 	name := strings.ToLower(hello.ServerName)
@@ -110,20 +100,13 @@ func (c *Certify) GetCertificate(hello *tls.ClientHelloInfo) (cert *tls.Certific
 // GetClientCertificate implements the GetClientCertificate TLS config hook.
 func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (cert *tls.Certificate, err error) {
 	c.initOnce.Do(c.init)
-	start := time.Now()
-	c.Logger.Debug("Getting client certificate")
 	defer func() {
-		took := time.Since(start)
 		if err != nil {
 			c.Logger.Error("Error getting client certificate", map[string]interface{}{
 				"error": err.Error(),
 			})
 			return
 		}
-		c.Logger.Debug("Certificate found", map[string]interface{}{
-			"serial": cert.Leaf.SerialNumber.String(),
-			"took":   took.String(),
-		})
 	}()
 	return c.getOrRenewCert(c.CommonName)
 }
