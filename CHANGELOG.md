@@ -1,10 +1,22 @@
 # Change Log
 
+## [v1.5.1](https://github.com/johanbrandhorst/certify/tree/v1.5.1) (2019-09-26)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.5.0...v1.5.1)
+
+**Fixed bugs:**
+
+- Certify fills debug log output with `getting certificate` logs [\#82](https://github.com/johanbrandhorst/certify/issues/82)
+
+**Merged pull requests:**
+
+- Remove excessive logging [\#83](https://github.com/johanbrandhorst/certify/pull/83) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.5.0](https://github.com/johanbrandhorst/certify/tree/v1.5.0) (2019-09-17)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.4.0...v1.5.0)
 
 **Merged pull requests:**
 
+- Update changelog for v1.5.0 [\#80](https://github.com/johanbrandhorst/certify/pull/80) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Add sidecar container [\#79](https://github.com/johanbrandhorst/certify/pull/79) ([johanbrandhorst](https://github.com/johanbrandhorst))
 
 ## [v1.4.0](https://github.com/johanbrandhorst/certify/tree/v1.4.0) (2019-07-09)
