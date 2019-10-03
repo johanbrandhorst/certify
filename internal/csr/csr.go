@@ -32,6 +32,7 @@ func FromCertConfig(commonName string, conf *certify.CertConfig) ([]byte, []byte
 	if conf != nil {
 		template.DNSNames = conf.SubjectAlternativeNames
 		template.IPAddresses = conf.IPSubjectAlternativeNames
+		template.URIs = conf.URISubjectAlternativeNames
 	}
 
 	csr, err := x509.CreateCertificateRequest(rand.Reader, template, pk)
