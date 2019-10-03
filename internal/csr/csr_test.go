@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"net"
+	"net/url"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,8 +20,9 @@ import (
 var _ = Describe("FromCertConfig", func() {
 	It("Generates a CSR and a Key", func() {
 		conf := &certify.CertConfig{
-			SubjectAlternativeNames:   []string{"extraname.com"},
-			IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
+			SubjectAlternativeNames:    []string{"extraname.com"},
+			IPSubjectAlternativeNames:  []net.IP{net.IPv4(1, 2, 3, 4)},
+			URISubjectAlternativeNames: []*url.URL{{Scheme: "https", Host: "example.com"}},
 			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
 				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 			}),
@@ -35,6 +37,7 @@ var _ = Describe("FromCertConfig", func() {
 		Expect(csr.PublicKey).To(BeAssignableToTypeOf(&ecdsa.PublicKey{}))
 		Expect(csr.Subject.CommonName).To(Equal("myserver.com"))
 		Expect(csr.DNSNames).To(Equal(conf.SubjectAlternativeNames))
+		Expect(csr.URIs).To(Equal(conf.URISubjectAlternativeNames))
 		for i, ip := range csr.IPAddresses {
 			Expect(ip.Equal(conf.IPSubjectAlternativeNames[i])).To(BeTrue())
 		}

@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net"
+	"net/url"
 	"sync"
 	"time"
 
@@ -134,8 +135,9 @@ var _ = Describe("Certify", func() {
 			CommonName: "myserver.com",
 			Issuer:     issuer,
 			CertConfig: &certify.CertConfig{
-				SubjectAlternativeNames:   []string{"extraname.com"},
-				IPSubjectAlternativeNames: []net.IP{net.IPv4(1, 2, 3, 4)},
+				SubjectAlternativeNames:    []string{"extraname.com"},
+				IPSubjectAlternativeNames:  []net.IP{net.IPv4(1, 2, 3, 4)},
+				URISubjectAlternativeNames: []*url.URL{{Scheme: "https", Host: "example.org"}},
 			},
 			Logger: logger,
 		}
@@ -146,16 +148,18 @@ var _ = Describe("Certify", func() {
 			case 1:
 				// First call is GetCertificate
 				Expect(in3).To(PointTo(MatchAllFields(Fields{
-					"SubjectAlternativeNames":   Equal(append(cli.CertConfig.SubjectAlternativeNames, serverName, cli.CommonName)),
-					"IPSubjectAlternativeNames": Equal(cli.CertConfig.IPSubjectAlternativeNames),
-					"KeyGenerator":              Not(BeNil()),
+					"SubjectAlternativeNames":    Equal(append(cli.CertConfig.SubjectAlternativeNames, serverName, cli.CommonName)),
+					"IPSubjectAlternativeNames":  Equal(cli.CertConfig.IPSubjectAlternativeNames),
+					"URISubjectAlternativeNames": Equal(cli.CertConfig.URISubjectAlternativeNames),
+					"KeyGenerator":               Not(BeNil()),
 				})))
 			case 2:
 				// Second call is GetClientCertificate
 				Expect(in3).To(PointTo(MatchAllFields(Fields{
-					"SubjectAlternativeNames":   Equal(append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName)),
-					"IPSubjectAlternativeNames": Equal(cli.CertConfig.IPSubjectAlternativeNames),
-					"KeyGenerator":              Not(BeNil()),
+					"SubjectAlternativeNames":    Equal(append(cli.CertConfig.SubjectAlternativeNames, cli.CommonName)),
+					"IPSubjectAlternativeNames":  Equal(cli.CertConfig.IPSubjectAlternativeNames),
+					"URISubjectAlternativeNames": Equal(cli.CertConfig.URISubjectAlternativeNames),
+					"KeyGenerator":               Not(BeNil()),
 				})))
 			}
 			pk, err := in3.KeyGenerator.Generate()
@@ -198,9 +202,10 @@ var _ = Describe("Certify", func() {
 				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(PointTo(MatchAllFields(Fields{
-					"SubjectAlternativeNames":   Equal([]string{cli.CommonName}),
-					"IPSubjectAlternativeNames": BeEmpty(),
-					"KeyGenerator":              Not(BeNil()),
+					"SubjectAlternativeNames":    Equal([]string{cli.CommonName}),
+					"IPSubjectAlternativeNames":  BeEmpty(),
+					"URISubjectAlternativeNames": BeEmpty(),
+					"KeyGenerator":               Not(BeNil()),
 				})))
 				return &tls.Certificate{
 					Leaf: &x509.Certificate{
@@ -240,9 +245,10 @@ var _ = Describe("Certify", func() {
 					defer GinkgoRecover()
 					Expect(in2).To(Equal(cli.CommonName))
 					Expect(in3).To(PointTo(MatchAllFields(Fields{
-						"SubjectAlternativeNames":   Equal([]string{cli.CommonName}),
-						"IPSubjectAlternativeNames": BeEmpty(),
-						"KeyGenerator":              Not(BeNil()),
+						"SubjectAlternativeNames":    Equal([]string{cli.CommonName}),
+						"IPSubjectAlternativeNames":  BeEmpty(),
+						"URISubjectAlternativeNames": BeEmpty(),
+						"KeyGenerator":               Not(BeNil()),
 					})))
 					return &tls.Certificate{
 						Leaf: &x509.Certificate{
@@ -282,9 +288,10 @@ var _ = Describe("Certify", func() {
 				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(PointTo(MatchAllFields(Fields{
-					"SubjectAlternativeNames":   Equal([]string{cli.CommonName}),
-					"IPSubjectAlternativeNames": Equal([]net.IP{net.ParseIP(serverName)}),
-					"KeyGenerator":              Not(BeNil()),
+					"SubjectAlternativeNames":    Equal([]string{cli.CommonName}),
+					"IPSubjectAlternativeNames":  Equal([]net.IP{net.ParseIP(serverName)}),
+					"URISubjectAlternativeNames": BeEmpty(),
+					"KeyGenerator":               Not(BeNil()),
 				})))
 				return &tls.Certificate{
 					Leaf: &x509.Certificate{
@@ -325,9 +332,10 @@ var _ = Describe("Certify", func() {
 				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(PointTo(MatchAllFields(Fields{
-					"SubjectAlternativeNames":   Equal([]string{cli.CommonName}),
-					"IPSubjectAlternativeNames": Equal([]net.IP{net.ParseIP(serverName)}),
-					"KeyGenerator":              Not(BeNil()),
+					"SubjectAlternativeNames":    Equal([]string{cli.CommonName}),
+					"IPSubjectAlternativeNames":  Equal([]net.IP{net.ParseIP(serverName)}),
+					"URISubjectAlternativeNames": BeEmpty(),
+					"KeyGenerator":               Not(BeNil()),
 				})))
 				_, err := in3.KeyGenerator.Generate()
 				Expect(err).To(MatchError("test error"))
@@ -364,9 +372,10 @@ var _ = Describe("Certify", func() {
 				defer GinkgoRecover()
 				Expect(in2).To(Equal(cli.CommonName))
 				Expect(in3).To(PointTo(MatchAllFields(Fields{
-					"SubjectAlternativeNames":   Equal([]string{cli.CommonName}),
-					"IPSubjectAlternativeNames": BeEmpty(),
-					"KeyGenerator":              Not(BeNil()),
+					"SubjectAlternativeNames":    Equal([]string{cli.CommonName}),
+					"IPSubjectAlternativeNames":  BeEmpty(),
+					"URISubjectAlternativeNames": BeEmpty(),
+					"KeyGenerator":               Not(BeNil()),
 				})))
 				<-wait
 				return &tls.Certificate{

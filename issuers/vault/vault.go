@@ -41,10 +41,22 @@ type Issuer struct {
 
 	// URISubjectAlternativeNames defines custom URI SANs.
 	// The format is a URI and must match the value specified in allowed_uri_sans, eg spiffe://hostname/foobar
+	//
+	// Warning: By default Vault reads URI SANs directly from the
+	// Certificate Signing Request (CSR), and ignores this field completely.
+	// This field only takes effect when the Vault role has set use_csr_sans to false,
+	// and using this setting will ignore any SANs in the CSR.
+	//
+	// To configure URI SANs directly in the CSR, set CertConfig.URISubjectAlternativeNames,
 	URISubjectAlternativeNames []string
 
 	// OtherSubjectAlternativeNames defines custom OID/UTF8-string SANs.
 	// The format is the same as OpenSSL: <oid>;<type>:<value> where the only current valid <type> is UTF8.
+	//
+	// Warning: By default Vault reads SANs directly from the
+	// Certificate Signing Request (CSR), and ignores this field completely.
+	// This field only takes effect when the Vault role has set use_csr_sans to false,
+	// and using this setting will ignore any SANs in the CSR.
 	OtherSubjectAlternativeNames []string
 
 	cli *api.Client

@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/tls"
 	"net"
+	"net/url"
 )
 
 // Issuer is the interface that must be implemented
@@ -21,8 +22,9 @@ type KeyGenerator interface {
 // CertConfig configures the specifics of the certificate
 // requested from the Issuer.
 type CertConfig struct {
-	SubjectAlternativeNames   []string
-	IPSubjectAlternativeNames []net.IP
+	SubjectAlternativeNames    []string
+	IPSubjectAlternativeNames  []net.IP
+	URISubjectAlternativeNames []*url.URL
 	// KeyGenerator is used to create new private keys
 	// for CSR requests. If not defined, defaults to ECDSA P256.
 	// Only ECDSA and RSA keys are supported.
@@ -39,6 +41,7 @@ func (cc *CertConfig) Clone() *CertConfig {
 
 	newCC.SubjectAlternativeNames = cc.SubjectAlternativeNames
 	newCC.IPSubjectAlternativeNames = cc.IPSubjectAlternativeNames
+	newCC.URISubjectAlternativeNames = cc.URISubjectAlternativeNames
 	newCC.KeyGenerator = cc.KeyGenerator
 	return newCC
 }
