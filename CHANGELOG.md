@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.6.0](https://github.com/johanbrandhorst/certify/tree/v1.6.0) (2019-10-03)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.5.1...v1.6.0)
+
+**Merged pull requests:**
+
+- Support setting URI SANs in CSRs [\#85](https://github.com/johanbrandhorst/certify/pull/85) ([eandre](https://github.com/eandre))
+
 ## [v1.5.1](https://github.com/johanbrandhorst/certify/tree/v1.5.1) (2019-09-26)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.5.0...v1.5.1)
 
@@ -9,6 +16,7 @@
 
 **Merged pull requests:**
 
+- Update changelog for v1.5.1 [\#84](https://github.com/johanbrandhorst/certify/pull/84) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Remove excessive logging [\#83](https://github.com/johanbrandhorst/certify/pull/83) ([johanbrandhorst](https://github.com/johanbrandhorst))
 
 ## [v1.5.0](https://github.com/johanbrandhorst/certify/tree/v1.5.0) (2019-09-17)
