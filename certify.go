@@ -64,6 +64,17 @@ func (c *Certify) init() {
 	if c.Logger == nil {
 		c.Logger = &noopLogger{}
 	}
+	if c.IssueTimeout == 0 {
+		c.IssueTimeout = time.Minute
+	}
+	if c.CertConfig == nil {
+		c.CertConfig = &CertConfig{}
+	}
+	if c.CertConfig.KeyGenerator == nil {
+		c.CertConfig.KeyGenerator = keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+			return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		})
+	}
 }
 
 // GetCertificate implements the GetCertificate TLS config hook.
@@ -112,11 +123,7 @@ func (c *Certify) GetClientCertificate(_ *tls.CertificateRequestInfo) (cert *tls
 }
 
 func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
-	issueTimeout := c.IssueTimeout
-	if issueTimeout == 0 {
-		issueTimeout = time.Minute
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), issueTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.IssueTimeout)
 	defer cancel()
 
 	cert, err := c.Cache.Get(ctx, name)
@@ -140,12 +147,6 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		c.Logger.Debug("Requesting new certificate from issuer")
 		conf := c.CertConfig.Clone()
 		conf.appendName(name)
-
-		if conf.KeyGenerator == nil {
-			conf.KeyGenerator = keyGeneratorFunc(func() (crypto.PrivateKey, error) {
-				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-			})
-		}
 
 		// Add CommonName to SANS if not already added
 		if name != c.CommonName {
