@@ -6,9 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
 	"net"
@@ -21,6 +19,7 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 
 	"github.com/johanbrandhorst/certify"
+	"github.com/johanbrandhorst/certify/internal/certs"
 	"github.com/johanbrandhorst/certify/issuers/aws"
 	"github.com/johanbrandhorst/certify/issuers/aws/mocks"
 )
@@ -31,7 +30,7 @@ var _ = Describe("AWS Issuer", func() {
 	It("issues a certificate", func() {
 		caARN := "someARN"
 		certARN := "anotherARN"
-		caCert, caKey, err := generateCertAndKey()
+		caCert, caKey, err := certs.GenerateCertAndKey()
 		Expect(err).To(Succeed())
 		client := &mocks.ACMPCAAPIMock{}
 		iss := &aws.Issuer{
@@ -62,7 +61,7 @@ var _ = Describe("AWS Issuer", func() {
 				NotBefore:          time.Now(),
 				NotAfter:           time.Now().AddDate(0, 0, int(*in1.Validity.Value)),
 			}
-			crt, err := x509.CreateCertificate(rand.Reader, template, caCert.cert, csr.PublicKey, caKey.key)
+			crt, err := x509.CreateCertificate(rand.Reader, template, caCert.Cert, csr.PublicKey, caKey.Key)
 			Expect(err).NotTo(HaveOccurred())
 			signedCert = pem.EncodeToMemory(&pem.Block{
 				Type:  "CERTIFICATE",
@@ -95,7 +94,7 @@ var _ = Describe("AWS Issuer", func() {
 				Fn: func(in *api.Request) {
 					in.Data = &acmpca.GetCertificateOutput{
 						Certificate:      api.String(string(signedCert)),
-						CertificateChain: api.String(string(caCert.pem)),
+						CertificateChain: api.String(string(caCert.PEM)),
 					}
 				},
 			})
@@ -115,8 +114,8 @@ var _ = Describe("AWS Issuer", func() {
 				Name: "Send",
 				Fn: func(in *api.Request) {
 					in.Data = &acmpca.GetCertificateAuthorityCertificateOutput{
-						Certificate:      api.String(string(caCert.pem)),
-						CertificateChain: api.String(string(caCert.pem)),
+						Certificate:      api.String(string(caCert.PEM)),
+						CertificateChain: api.String(string(caCert.PEM)),
 					}
 				},
 			})
@@ -137,8 +136,8 @@ var _ = Describe("AWS Issuer", func() {
 				Name: "Send",
 				Fn: func(in *api.Request) {
 					in.Data = &acmpca.GetCertificateAuthorityCertificateOutput{
-						Certificate:      api.String(string(caCert.pem)),
-						CertificateChain: api.String(string(caCert.pem)),
+						Certificate:      api.String(string(caCert.PEM)),
+						CertificateChain: api.String(string(caCert.PEM)),
 					}
 				},
 			})
@@ -179,63 +178,4 @@ type keyGeneratorFunc func() (crypto.PrivateKey, error)
 
 func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
 	return kgf()
-}
-
-type key struct {
-	pem []byte
-	key *rsa.PrivateKey
-}
-
-type cert struct {
-	pem  []byte
-	cert *x509.Certificate
-}
-
-func generateCertAndKey() (*cert, *key, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, nil, err
-	}
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Hour)
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return nil, nil, err
-	}
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			CommonName: "Certify Test Cert",
-		},
-		NotBefore:             notBefore,
-		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, priv.Public(), priv)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	k := &key{
-		key: priv,
-		pem: pem.EncodeToMemory(&pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(priv),
-		}),
-	}
-	crt, err := x509.ParseCertificate(derBytes)
-	if err != nil {
-		return nil, nil, err
-	}
-	c := &cert{
-		cert: crt,
-		pem: pem.EncodeToMemory(&pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: derBytes,
-		}),
-	}
-	return c, k, nil
 }
