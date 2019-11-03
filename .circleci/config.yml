@@ -16,7 +16,7 @@ jobs:
       - run: git diff --exit-code
   generate:
     docker:
-      - image: golang:1.12 # moq doesn't work with 1.13 https://github.com/matryer/moq/issues/103
+      - image: golang:latest
     environment:
       GO111MODULE: "on"
       GOPROXY: "https://proxy.golang.org"

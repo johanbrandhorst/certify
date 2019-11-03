@@ -24,7 +24,7 @@ require (
 	github.com/hashicorp/vault v1.1.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.0.0 // indirect
-	github.com/matryer/moq v0.0.0-20190312154309-6cfb0558e1bd
+	github.com/matryer/moq v0.0.0-20191103151256-382bd174c0ef
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
