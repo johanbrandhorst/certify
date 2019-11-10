@@ -29,7 +29,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spiffe/go-spiffe v0.0.0-20190518123159-37d000f27824
-	github.com/uw-labs/podrick v0.3.1-0.20191110180927-d1eb224e20cf
+	github.com/uw-labs/podrick v0.3.1-0.20191110182239-f0d4f8dde70f
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
 	google.golang.org/grpc v1.24.0

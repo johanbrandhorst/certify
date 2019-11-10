@@ -175,8 +175,8 @@ github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
-github.com/uw-labs/podrick v0.3.1-0.20191110180927-d1eb224e20cf h1:6XVtzeyQVEBxsg5700+glHkrYWg1pc8kq4VRHuda/Hk=
-github.com/uw-labs/podrick v0.3.1-0.20191110180927-d1eb224e20cf/go.mod h1:FxM5qZKI0OJT44CyDmn1n6d4S6QI9qmJEQ9I4Al7Yns=
+github.com/uw-labs/podrick v0.3.1-0.20191110182239-f0d4f8dde70f h1:rANG71b4PzepYubTj0jjiUjPvQuS0wQz3m46cp8LrL0=
+github.com/uw-labs/podrick v0.3.1-0.20191110182239-f0d4f8dde70f/go.mod h1:FxM5qZKI0OJT44CyDmn1n6d4S6QI9qmJEQ9I4Al7Yns=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1 h1:tY9CJiPnMXf1ERmG2EyK7gNUd+c6RKGD0IfU8WdUSz8=
