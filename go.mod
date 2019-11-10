@@ -12,7 +12,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3 // indirect
-	github.com/golang/protobuf v1.3.1
+	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -36,8 +36,9 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spiffe/go-spiffe v0.0.0-20190518123159-37d000f27824
-	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
+	golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
 	google.golang.org/grpc v1.20.0
 	gotest.tools v2.2.0+incompatible // indirect

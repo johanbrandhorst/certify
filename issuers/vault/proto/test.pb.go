@@ -8,6 +8,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -104,6 +106,14 @@ func (c *testClient) Ping(ctx context.Context, in *Void, opts ...grpc.CallOption
 // TestServer is the server API for Test service.
 type TestServer interface {
 	Ping(context.Context, *Void) (*Void, error)
+}
+
+// UnimplementedTestServer can be embedded to have forward compatible implementations.
+type UnimplementedTestServer struct {
+}
+
+func (*UnimplementedTestServer) Ping(ctx context.Context, req *Void) (*Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 
 func RegisterTestServer(s *grpc.Server, srv TestServer) {
