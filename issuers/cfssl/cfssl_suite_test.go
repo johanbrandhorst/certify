@@ -10,7 +10,8 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
-	"log"
+	"fmt"
+	"io"
 	"math/big"
 	"net"
 	"net/url"
@@ -45,8 +46,6 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	log.SetOutput(GinkgoWriter)
-
 	cert, key, err := generateCertAndKey("localhost", net.IPv4(0, 0, 0, 0))
 	Expect(err).To(Succeed())
 
@@ -121,6 +120,7 @@ var _ = BeforeSuite(func() {
 				Content: bytes.NewReader(confBytes),
 			}),
 			podrick.WithLivenessCheck(lc),
+			podrick.WithLogger(writeLogger{GinkgoWriter}),
 		)
 		Expect(err).To(Succeed())
 
@@ -273,4 +273,63 @@ func generateCertAndKey(SAN string, IPSAN net.IP) ([]byte, []byte, error) {
 	})
 
 	return certOut, keyOut, nil
+}
+
+type writeLogger struct {
+	io.Writer
+}
+
+func (w writeLogger) Trace(msg string, fields ...map[string]interface{}) {
+	msg = "] " + msg
+	if len(fields) > 0 {
+		for k, v := range fields[0] {
+			msg = fmt.Sprintf(k+": %v, ", v) + msg
+		}
+	}
+	msg = "TRACE [" + msg
+	_, _ = w.Write([]byte(msg)) // nolint: errcheck
+}
+
+func (w writeLogger) Debug(msg string, fields ...map[string]interface{}) {
+	msg = "] " + msg
+	if len(fields) > 0 {
+		for k, v := range fields[0] {
+			msg = fmt.Sprintf(k+": %v, ", v) + msg
+		}
+	}
+	msg = "DEBUG [" + msg
+	_, _ = w.Write([]byte(msg)) // nolint: errcheck
+}
+
+func (w writeLogger) Info(msg string, fields ...map[string]interface{}) {
+	msg = "] " + msg
+	if len(fields) > 0 {
+		for k, v := range fields[0] {
+			msg = fmt.Sprintf(k+": %v, ", v) + msg
+		}
+	}
+	msg = "INFO [" + msg
+	_, _ = w.Write([]byte(msg)) // nolint: errcheck
+}
+
+func (w writeLogger) Warn(msg string, fields ...map[string]interface{}) {
+	msg = "] " + msg
+	if len(fields) > 0 {
+		for k, v := range fields[0] {
+			msg = fmt.Sprintf(k+": %v, ", v) + msg
+		}
+	}
+	msg = "WARN [" + msg
+	_, _ = w.Write([]byte(msg)) // nolint: errcheck
+}
+
+func (w writeLogger) Error(msg string, fields ...map[string]interface{}) {
+	msg = "] " + msg
+	if len(fields) > 0 {
+		for k, v := range fields[0] {
+			msg = fmt.Sprintf(k+": %v, ", v) + msg
+		}
+	}
+	msg = "ERROR [" + msg
+	_, _ = w.Write([]byte(msg)) // nolint: errcheck
 }
