@@ -36,9 +36,14 @@ jobs:
     working_directory: /home/circleci/.go_workspace/src/github.com/johanbrandhorst/certify
     steps:
       - checkout
-      - run: go get github.com/lpar/goup
-      - run: sudo rm -rf /usr/local/go
-      - run: yes | sudo /home/circleci/.go_workspace/bin/goup --force --os linux --arch amd64 || true # swallow exit 141
+      - run:
+          name: Update Go installation
+          command: |
+            wget https://github.com/lpar/goup/releases/download/1.0/goup-linux-x64.xz &&
+            xz --decompress goup-linux-x64.xz &&
+            chmod +x goup-linux-x64
+            sudo rm -rf /usr/local/go &&
+            yes | sudo ./goup-linux-x64 --force --os linux --arch amd64 || true # swallow exit 141
       - run: go install github.com/onsi/ginkgo/ginkgo
       - run: ginkgo -v -r -coverprofile=coverage.txt -cover --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --progress --skipPackage=vendor --skipMeasurements
       - run: bash <(curl -s https://codecov.io/bash)
