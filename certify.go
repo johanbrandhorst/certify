@@ -2,10 +2,6 @@ package certify
 
 import (
 	"context"
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
 	"errors"
 	"strings"
@@ -71,9 +67,7 @@ func (c *Certify) init() {
 		c.CertConfig = &CertConfig{}
 	}
 	if c.CertConfig.KeyGenerator == nil {
-		c.CertConfig.KeyGenerator = keyGeneratorFunc(func() (crypto.PrivateKey, error) {
-			return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		})
+		c.CertConfig.KeyGenerator = &singletonKey{}
 	}
 }
 
@@ -183,10 +177,4 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		}
 		return res.Val.(*tls.Certificate), nil
 	}
-}
-
-type keyGeneratorFunc func() (crypto.PrivateKey, error)
-
-func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
-	return kgf()
 }
