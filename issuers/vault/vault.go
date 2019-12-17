@@ -7,12 +7,17 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/vault/api"
 
 	"github.com/johanbrandhorst/certify"
 	"github.com/johanbrandhorst/certify/internal/csr"
+)
+
+var (
+	renewMutex = sync.Mutex{}
 )
 
 // Issuer implements the Issuer interface with a
@@ -60,11 +65,15 @@ type Issuer struct {
 	OtherSubjectAlternativeNames []string
 
 	cli *api.Client
+
+	tokenExpires   time.Time
+	tokenRenewable bool
 }
 
 // FromClient returns an Issuer using the provided Vault API client.
 // Any changes to the issuers properties (such as setting the TTL or adding Other SANS)
 // must be done before using it. The client must have its token configured.
+// This method will not attempt to renew the token.
 func FromClient(v *api.Client, role string) *Issuer {
 	return &Issuer{
 		Role: role,
@@ -87,6 +96,23 @@ func (v *Issuer) connect(ctx context.Context) error {
 	}
 
 	v.cli.SetToken(v.Token)
+
+	s, err := v.cli.Auth().Token().LookupSelf()
+	if err != nil {
+		return err
+	}
+
+	if ok, _ := s.TokenIsRenewable(); ok {
+		v.tokenRenewable = true
+
+		if ttl, err := s.TokenTTL(); err == nil {
+			v.tokenExpires = time.Now().Add(ttl)
+		} else {
+			// The token may not ever expire, but we will default to an hour.
+			v.tokenExpires = time.Now().Add(time.Hour)
+		}
+	}
+
 	return nil
 }
 
@@ -98,6 +124,10 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if err := v.checkToken(ctx); err != nil {
+		return nil, err
 	}
 
 	csrPEM, keyPEM, err := csr.FromCertConfig(commonName, conf)
@@ -139,6 +169,43 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 	// This can't error since it's called in tls.X509KeyPair above successfully
 	tlsCert.Leaf, _ = x509.ParseCertificate(tlsCert.Certificate[0])
 	return &tlsCert, nil
+}
+
+func (v *Issuer) checkToken(ctx context.Context) error {
+	// Th following behavor will only happen for renewable tokens.
+	if !v.tokenRenewable {
+		return nil
+	}
+
+	renewMutex.Lock()
+	defer renewMutex.Unlock()
+
+	// Has the token expired, or is there a chance of it expiring during
+	// the request it is being used for?
+	var t time.Time
+	if dl, set := ctx.Deadline(); set {
+		t = dl
+	} else {
+		t = time.Now().Add(30 * time.Second)
+	}
+
+	if !v.tokenExpires.Before(t) {
+		return nil
+	}
+
+	s, err := v.cli.Auth().Token().RenewSelf(3600) // todo: this should be customizable.
+	if err != nil {
+		return err
+	}
+
+	if ttl, err := s.TokenTTL(); err == nil {
+		v.tokenExpires = time.Now().Add(ttl)
+	} else {
+		// The token may not ever expire, but we will default to an hour.
+		v.tokenExpires = time.Now().Add(time.Hour)
+	}
+
+	return nil
 }
 
 func (v Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) {
