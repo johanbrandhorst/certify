@@ -28,7 +28,7 @@ type CertConfig struct {
 	// KeyGenerator is used to create new private keys
 	// for CSR requests. If not defined, defaults to ECDSA P256.
 	// Only ECDSA and RSA keys are supported.
-	// This is guaranteed to be privided in Issue calls.
+	// This is guaranteed to be provided in Issue calls.
 	KeyGenerator KeyGenerator
 }
 
