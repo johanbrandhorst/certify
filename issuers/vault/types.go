@@ -1,9 +1,27 @@
 package vault
 
 import (
+	"context"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/vault/api"
 )
+
+// AuthMethod defines the interface required to implement
+// custom authentication against the Vault server.
+type AuthMethod interface {
+	GetToken(context.Context, *api.Client) (string, error)
+}
+
+// ConstantToken implements AuthMethod with a constant token
+type ConstantToken string
+
+// GetToken returns the token
+func (c ConstantToken) GetToken(context.Context, *api.Client) (string, error) {
+	return string(c), nil
+}
+
 
 // https://www.vaultproject.io/api/secret/pki/index.html#parameters-14
 type csrOpts struct {

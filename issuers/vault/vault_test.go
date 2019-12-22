@@ -28,6 +28,8 @@ import (
 	"github.com/johanbrandhorst/certify/issuers/vault/proto"
 )
 
+//go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
+
 type otherName struct {
 	TypeID asn1.ObjectIdentifier
 	Value  string `asn1:"explicit,utf8"`
@@ -57,8 +59,6 @@ func getOtherNames(cert *x509.Certificate) (otherNames []otherName, err error) {
 	return otherNames, nil
 }
 
-//go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
-
 var _ = Describe("Vault Issuer", func() {
 	var iss certify.Issuer
 	var conf *certify.CertConfig
@@ -66,7 +66,7 @@ var _ = Describe("Vault Issuer", func() {
 	BeforeEach(func() {
 		iss = &vault.Issuer{
 			URL:   vaultTLSConf.URL,
-			Token: vaultTLSConf.Token,
+			AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
 			Role:  vaultTLSConf.Role,
 			TLSConfig: &tls.Config{
 				RootCAs: vaultTLSConf.CertPool,
@@ -106,11 +106,36 @@ var _ = Describe("Vault Issuer", func() {
 		}))
 	})
 
+	Context("with no explicit AuthMethod set", func() {
+		It("still works", func() {
+			cn := "somename.com"
+	
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+	
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+	
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+	
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
+				TypeID: asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 20, 2, 3}),
+				Value:  "devops@nope.com",
+			}))
+		})
+	})
+
 	Context("with URI SANs", func() {
 		BeforeEach(func() {
 			iss = &vault.Issuer{
 				URL:   vaultTLSConf.URL,
-				Token: vaultTLSConf.Token,
+				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
 				Role:  vaultTLSConf.RoleURISANs,
 				TLSConfig: &tls.Config{
 					RootCAs: vaultTLSConf.CertPool,
@@ -148,7 +173,7 @@ var _ = Describe("Vault Issuer", func() {
 		BeforeEach(func() {
 			iss = &vault.Issuer{
 				URL:   vaultTLSConf.URL,
-				Token: vaultTLSConf.Token,
+				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
 				Mount: altMount,
 				Role:  vaultTLSConf.Role,
 				TLSConfig: &tls.Config{
@@ -252,7 +277,7 @@ var _ = Describe("Vault HTTP Issuer", func() {
 	BeforeEach(func() {
 		iss = &vault.Issuer{
 			URL:        vaultConf.URL,
-			Token:      vaultConf.Token,
+			AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
 			Role:       vaultConf.Role,
 			TimeToLive: time.Minute * 10,
 			// Format is "<type_id>;utf8:<value>", where type_id
@@ -388,6 +413,41 @@ var _ = Describe("Using a pre-created client", func() {
 	})
 })
 
+var _ = Describe("When an AuthMethod is not explicitly set", func() {
+	It("still works", func() {
+		iss := &vault.Issuer{
+			URL:   vaultTLSConf.URL,
+			Token: vaultTLSConf.Token,
+			Role:  vaultTLSConf.Role,
+			TLSConfig: &tls.Config{
+				RootCAs: vaultTLSConf.CertPool,
+			},
+			TimeToLive: time.Minute * 10,
+		}
+		conf := &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
+		cn := "somename.com"
+
+		tlsCert, err := iss.Issue(context.Background(), cn, conf)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+		// Check that chain is included
+		Expect(tlsCert.Certificate).To(HaveLen(2))
+		caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.TimeToLive), 5*time.Second))
+	})
+})
+
 type keyGeneratorFunc func() (crypto.PrivateKey, error)
 
 func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
@@ -424,7 +484,7 @@ var _ = Describe("gRPC Test", func() {
 					CommonName: "Certify",
 					Issuer: &vault.Issuer{
 						URL:   vaultTLSConf.URL,
-						Token: vaultTLSConf.Token,
+						AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
 						Role:  vaultTLSConf.Role,
 						TLSConfig: &tls.Config{
 							RootCAs: vaultTLSConf.CertPool,

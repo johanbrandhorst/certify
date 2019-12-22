@@ -18,19 +18,26 @@ import (
 // Issuer implements the Issuer interface with a
 // Hashicorp Vault PKI Secrets Engine backend.
 //
-// URL, Token and Role are required.
+// URL, Role and AuthMethod are required.
 type Issuer struct {
 	// URL is the URL of the Vault instance.
 	URL *url.URL
-	// Token is the Vault secret token that should be used
-	// when issuing certificates.
-	Token string
-	// Mount is the name under which the PKI secrets engine
-	// is mounted. Defaults to `pki`
-	Mount string
 	// Role is the Vault Role that should be used
 	// when issuing certificates.
 	Role string
+
+	// Token is the Vault secret token that should be used
+	// when issuing certificates.
+	//
+	// Deprecated: use AuthMethod instead.
+	Token string
+	// AuthMethod configures the method used for authenticating
+	// against the Vault server.
+	AuthMethod AuthMethod
+
+	// Mount is the name under which the PKI secrets engine
+	// is mounted. Defaults to `pki`
+	Mount string
 	// TLSConfig allows configuration of the TLS config
 	// used when connecting to the Vault server.
 	TLSConfig *tls.Config
@@ -64,10 +71,12 @@ type Issuer struct {
 
 // FromClient returns an Issuer using the provided Vault API client.
 // Any changes to the issuers properties (such as setting the TTL or adding Other SANS)
-// must be done before using it. The client must have its token configured.
+// must be done before using it. The Issuer will default to using
+// the token already defined in the client for authentication.
 func FromClient(v *api.Client, role string) *Issuer {
 	return &Issuer{
 		Role: role,
+		AuthMethod: ConstantToken(v.Token()),
 		cli:  v,
 	}
 }
@@ -86,7 +95,6 @@ func (v *Issuer) connect(ctx context.Context) error {
 		return err
 	}
 
-	v.cli.SetToken(v.Token)
 	return nil
 }
 
@@ -98,6 +106,12 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Convert Token to AuthMethod, if no AuthMethod set,
+	// for backwards compatibility.
+	if v.AuthMethod == nil {
+		v.AuthMethod = ConstantToken(v.Token)
 	}
 
 	csrPEM, keyPEM, err := csr.FromCertConfig(commonName, conf)
@@ -146,6 +160,13 @@ func (v Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) 
 	if v.Mount != "" {
 		pkiMountName = v.Mount
 	}
+
+	// Update token immediately before making the request
+	token, err := v.AuthMethod.GetToken(ctx, v.cli)
+	if err != nil {
+		return nil, err
+	}
+	v.cli.SetToken(token)
 
 	r := v.cli.NewRequest("PUT", "/v1/"+pkiMountName+"/sign/"+v.Role)
 	if err := r.SetJSONBody(opts); err != nil {
