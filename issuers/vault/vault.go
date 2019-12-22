@@ -162,11 +162,10 @@ func (v Issuer) signCSR(ctx context.Context, opts csrOpts) (*api.Secret, error) 
 	}
 
 	// Update token immediately before making the request
-	token, err := v.AuthMethod.GetToken(ctx, v.cli)
+	err := v.AuthMethod.SetToken(ctx, v.cli)
 	if err != nil {
 		return nil, err
 	}
-	v.cli.SetToken(token)
 
 	r := v.cli.NewRequest("PUT", "/v1/"+pkiMountName+"/sign/"+v.Role)
 	if err := r.SetJSONBody(opts); err != nil {
