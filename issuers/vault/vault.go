@@ -75,9 +75,9 @@ type Issuer struct {
 // the token already defined in the client for authentication.
 func FromClient(v *api.Client, role string) *Issuer {
 	return &Issuer{
-		Role: role,
+		Role:       role,
 		AuthMethod: ConstantToken(v.Token()),
-		cli:  v,
+		cli:        v,
 	}
 }
 

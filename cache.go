@@ -270,9 +270,11 @@ type noopCache struct{}
 func (*noopCache) Get(context.Context, string) (*tls.Certificate, error) {
 	return nil, ErrCacheMiss
 }
+
 func (*noopCache) Put(context.Context, string, *tls.Certificate) error {
 	return nil
 }
+
 func (*noopCache) Delete(context.Context, string) error {
 	return nil
 }

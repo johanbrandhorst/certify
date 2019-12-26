@@ -65,9 +65,9 @@ var _ = Describe("Vault Issuer", func() {
 
 	BeforeEach(func() {
 		iss = &vault.Issuer{
-			URL:   vaultTLSConf.URL,
+			URL:        vaultTLSConf.URL,
 			AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
-			Role:  vaultTLSConf.Role,
+			Role:       vaultTLSConf.Role,
 			TLSConfig: &tls.Config{
 				RootCAs: vaultTLSConf.CertPool,
 			},
@@ -109,19 +109,19 @@ var _ = Describe("Vault Issuer", func() {
 	Context("with no explicit AuthMethod set", func() {
 		It("still works", func() {
 			cn := "somename.com"
-	
+
 			tlsCert, err := iss.Issue(context.Background(), cn, conf)
 			Expect(err).NotTo(HaveOccurred())
-	
+
 			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
 			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
-	
+
 			// Check that chain is included
 			Expect(tlsCert.Certificate).To(HaveLen(2))
 			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
 			Expect(err).NotTo(HaveOccurred())
 			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
-	
+
 			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
 			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
 			Expect(getOtherNames(tlsCert.Leaf)).To(ConsistOf(otherName{
@@ -134,9 +134,9 @@ var _ = Describe("Vault Issuer", func() {
 	Context("with URI SANs", func() {
 		BeforeEach(func() {
 			iss = &vault.Issuer{
-				URL:   vaultTLSConf.URL,
+				URL:        vaultTLSConf.URL,
 				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
-				Role:  vaultTLSConf.RoleURISANs,
+				Role:       vaultTLSConf.RoleURISANs,
 				TLSConfig: &tls.Config{
 					RootCAs: vaultTLSConf.CertPool,
 				},
@@ -172,10 +172,10 @@ var _ = Describe("Vault Issuer", func() {
 	Context("with a non-standard mount point", func() {
 		BeforeEach(func() {
 			iss = &vault.Issuer{
-				URL:   vaultTLSConf.URL,
+				URL:        vaultTLSConf.URL,
 				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
-				Mount: altMount,
-				Role:  vaultTLSConf.Role,
+				Mount:      altMount,
+				Role:       vaultTLSConf.Role,
 				TLSConfig: &tls.Config{
 					RootCAs: vaultTLSConf.CertPool,
 				},
@@ -485,9 +485,9 @@ var _ = Describe("When using RenewingToken", func() {
 		}()
 
 		iss := &vault.Issuer{
-			URL: vaultTLSConf.URL,
+			URL:        vaultTLSConf.URL,
 			AuthMethod: rt,
-			Role: vaultTLSConf.Role,
+			Role:       vaultTLSConf.Role,
 			TLSConfig: &tls.Config{
 				RootCAs: vaultTLSConf.CertPool,
 			},
@@ -503,7 +503,7 @@ var _ = Describe("When using RenewingToken", func() {
 		_, err = iss.Issue(context.Background(), cn, conf)
 		Expect(err).To(Succeed())
 
-		time.Sleep(2*time.Second) // Should cause token to be renewed in the background.
+		time.Sleep(2 * time.Second) // Should cause token to be renewed in the background.
 
 		_, err = iss.Issue(context.Background(), cn, conf)
 		Expect(err).To(Succeed())
@@ -554,9 +554,9 @@ var _ = Describe("gRPC Test", func() {
 				cb = &certify.Certify{
 					CommonName: "Certify",
 					Issuer: &vault.Issuer{
-						URL:   vaultTLSConf.URL,
+						URL:        vaultTLSConf.URL,
 						AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
-						Role:  vaultTLSConf.Role,
+						Role:       vaultTLSConf.Role,
 						TLSConfig: &tls.Config{
 							RootCAs: vaultTLSConf.CertPool,
 						},
