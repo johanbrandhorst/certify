@@ -448,6 +448,77 @@ var _ = Describe("When an AuthMethod is not explicitly set", func() {
 	})
 })
 
+var _ = Describe("When using RenewingToken", func() {
+	It("renews the token when it is within the renewal period", func() {
+		vConf := api.DefaultConfig()
+		vConf.HttpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{
+			RootCAs: vaultTLSConf.CertPool,
+		}
+		vConf.Address = vaultTLSConf.URL.String()
+		cli, err := api.NewClient(vConf)
+		Expect(err).To(Succeed())
+
+		cli.SetToken(vaultTLSConf.Token)
+
+		ttl := time.Minute
+		expiry := time.Now().Add(ttl)
+
+		opts := &api.TokenCreateRequest{
+			TTL:       ttl.String(),
+			Renewable: func() *bool { t := true; return &t }(),
+		}
+		tok, err := cli.Auth().Token().Create(opts)
+		Expect(err).To(Succeed())
+
+		tokTTL, err := tok.TokenTTL()
+		Expect(err).To(Succeed())
+		Expect(tokTTL).To(BeNumerically("~", time.Until(expiry), time.Second))
+
+		it := tok.Auth.ClientToken
+		rt := &vault.RenewingToken{
+			Initial:     it,
+			RenewBefore: time.Hour,
+			TimeToLive:  ttl, // Should renew immediately, since TTL < RenewBefore
+		}
+		defer func() {
+			Expect(rt.Close()).To(Succeed())
+		}()
+
+		iss := &vault.Issuer{
+			URL: vaultTLSConf.URL,
+			AuthMethod: rt,
+			Role: vaultTLSConf.Role,
+			TLSConfig: &tls.Config{
+				RootCAs: vaultTLSConf.CertPool,
+			},
+			TimeToLive: time.Minute * 10,
+		}
+		conf := &certify.CertConfig{
+			KeyGenerator: keyGeneratorFunc(func() (crypto.PrivateKey, error) {
+				return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			}),
+		}
+		cn := "somename.com"
+
+		_, err = iss.Issue(context.Background(), cn, conf)
+		Expect(err).To(Succeed())
+
+		time.Sleep(2*time.Second) // Should cause token to be renewed in the background.
+
+		_, err = iss.Issue(context.Background(), cn, conf)
+		Expect(err).To(Succeed())
+
+		newTok, err := cli.Auth().Token().Lookup(it)
+		Expect(err).To(Succeed())
+
+		newTTL, err := newTok.TokenTTL()
+		Expect(err).To(Succeed())
+
+		// Assert that the token now has a new expiry
+		Expect(time.Now().Add(newTTL)).To(BeTemporally(">", expiry, time.Second))
+	})
+})
+
 type keyGeneratorFunc func() (crypto.PrivateKey, error)
 
 func (kgf keyGeneratorFunc) Generate() (crypto.PrivateKey, error) {
