@@ -47,7 +47,7 @@ type RenewingToken struct {
 	token   string
 	tokenMu sync.Mutex
 	errC    chan error
-	cancel func()
+	cancel  func()
 }
 
 // SetToken implements AuthMethod for RenewingToken.
@@ -71,7 +71,7 @@ func (r *RenewingToken) SetToken(ctx context.Context, cli *api.Client) error {
 			return
 		}
 		defer resp.Body.Close()
-	
+
 		tok, tErr := api.ParseSecret(resp.Body)
 		if tErr != nil {
 			err = tErr
@@ -118,7 +118,7 @@ func (r *RenewingToken) SetToken(ctx context.Context, cli *api.Client) error {
 
 				// Needs renewal
 				req := cli.NewRequest("PUT", "/v1/auth/token/renew-self")
-			
+
 				body := map[string]interface{}{"increment": r.TimeToLive.Seconds()}
 				if err := req.SetJSONBody(body); err != nil {
 					r.errC <- err
@@ -130,7 +130,7 @@ func (r *RenewingToken) SetToken(ctx context.Context, cli *api.Client) error {
 					return
 				}
 				defer resp.Body.Close()
-			
+
 				tok, tErr := api.ParseSecret(resp.Body)
 				if tErr != nil {
 					r.errC <- err
