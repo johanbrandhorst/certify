@@ -141,21 +141,38 @@ func vaultIssuer(conf envtypes.Vault) (*vault.Issuer, error) {
 	if conf.URL.String() == "" {
 		return nil, errors.New("vault URL is required")
 	}
-	if conf.Token == "" {
-		return nil, errors.New("vault Token is required")
+	if conf.Token == "" && conf.AuthMethod == envtypes.UnknownAuthMethod {
+		return nil, errors.New("vault Token or AuthMethod is required")
 	}
 	if conf.Role == "" {
 		return nil, errors.New("vault Role is required")
 	}
 	v := &vault.Issuer{
 		URL:                          &conf.URL,
-		Token:                        conf.Token,
 		Role:                         conf.Role,
 		Mount:                        conf.Mount,
 		TimeToLive:                   conf.TimeToLive,
 		URISubjectAlternativeNames:   conf.URISubjectAlternativeNames,
 		OtherSubjectAlternativeNames: conf.OtherSubjectAlternativeNames,
 		TLSConfig:                    &tls.Config{},
+	}
+	switch conf.AuthMethod {
+	case envtypes.ConstantTokenAuthMethod:
+		if conf.AuthMethodConstantToken == "" {
+			return nil, errors.New("vault constant token is required when using the constant auth method")
+		}
+		v.AuthMethod = conf.AuthMethodConstantToken
+	case envtypes.RenewingTokenAuthMethod:
+		if conf.AuthMethodRenewingToken.Initial == "" {
+			return nil, errors.New("vault initial renewing token is required when using the renewing auth method")
+		}
+		v.AuthMethod = &vault.RenewingToken{
+			Initial:     conf.AuthMethodRenewingToken.Initial,
+			RenewBefore: conf.AuthMethodRenewingToken.RenewBefore,
+			TimeToLive:  conf.AuthMethodRenewingToken.TimeToLive,
+		}
+	default:
+		v.AuthMethod = vault.ConstantToken(conf.Token)
 	}
 	if conf.CACertPath != "" {
 		v.TLSConfig.RootCAs = x509.NewCertPool()
