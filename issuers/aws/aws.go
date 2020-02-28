@@ -130,7 +130,7 @@ func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cert
 		return nil, err
 	}
 
-	caChainPEM := append([]byte(*certResp.Certificate), []byte(*certResp.CertificateChain)...)
+	caChainPEM := append(append([]byte(*certResp.Certificate), '\n'), []byte(*certResp.CertificateChain)...)
 
 	tlsCert, err := tls.X509KeyPair(caChainPEM, keyPEM)
 	if err != nil {
