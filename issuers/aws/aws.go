@@ -30,7 +30,7 @@ type Issuer struct {
 	//    conf.Region = endpoints.EuWest2RegionID
 	//    conf.Credentials = aws.NewStaticCredentialsProvider("YOURKEY", "YOURKEYSECRET", "")
 	//    cli := acmpca.New(conf)
-	Client iface.ACMPCAAPI
+	Client iface.ClientAPI
 	// CertificateAuthorityARN specifies the ARN of a pre-created CA
 	// which will be used to issue the certificates.
 	CertificateAuthorityARN string
@@ -51,7 +51,7 @@ func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cert
 			CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
 		})
 
-		caResp, err := caReq.Send()
+		caResp, err := caReq.Send(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +109,7 @@ func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cert
 		},
 	})
 
-	csrResp, err := csrReq.Send()
+	csrResp, err := csrReq.Send(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -118,14 +118,15 @@ func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cert
 		CertificateArn:          csrResp.CertificateArn,
 		CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
 	}
-	err = i.Client.WaitUntilCertificateIssuedWithContext(ctx, getReq)
+
+	err = i.Client.WaitUntilCertificateIssued(ctx, getReq)
 	if err != nil {
 		return nil, err
 	}
 
 	certReq := i.Client.GetCertificateRequest(getReq)
 
-	certResp, err := certReq.Send()
+	certResp, err := certReq.Send(ctx)
 	if err != nil {
 		return nil, err
 	}
