@@ -1,10 +1,58 @@
 # Change Log
 
+## [v1.7.0](https://github.com/johanbrandhorst/certify/tree/v1.7.0) (2020-02-28)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.7.0-alpha2...v1.7.0)
+
+**Fixed bugs:**
+
+- AWS CM failing [\#108](https://github.com/johanbrandhorst/certify/issues/108)
+
+**Closed issues:**
+
+- gRPC with Vault - why does server initiates a CSR with client CN? [\#107](https://github.com/johanbrandhorst/certify/issues/107)
+
+**Merged pull requests:**
+
+- issuers/aws: Fix incorrectly concatenated certificates [\#109](https://github.com/johanbrandhorst/certify/pull/109) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
+## [v1.7.0-alpha2](https://github.com/johanbrandhorst/certify/tree/v1.7.0-alpha2) (2019-12-29)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.7.0-alpha...v1.7.0-alpha2)
+
+**Implemented enhancements:**
+
+- Rotating Vault tokens. [\#101](https://github.com/johanbrandhorst/certify/issues/101)
+
+**Merged pull requests:**
+
+- Add Vault AuthMethod to sidecar [\#105](https://github.com/johanbrandhorst/certify/pull/105) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
+## [v1.7.0-alpha](https://github.com/johanbrandhorst/certify/tree/v1.7.0-alpha) (2019-12-26)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.6.0...v1.7.0-alpha)
+
+**Implemented enhancements:**
+
+- Ability to reuse private key [\#99](https://github.com/johanbrandhorst/certify/issues/99)
+- Update CFSSL to 1.4.0 [\#94](https://github.com/johanbrandhorst/certify/issues/94)
+- Publish docker container for certify proxy [\#90](https://github.com/johanbrandhorst/certify/issues/90)
+
+**Merged pull requests:**
+
+- Add renewable token auth method to Vault issuer [\#104](https://github.com/johanbrandhorst/certify/pull/104) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Add AuthMethod to Vault issuer [\#103](https://github.com/johanbrandhorst/certify/pull/103) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Reuse keys by default [\#100](https://github.com/johanbrandhorst/certify/pull/100) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Add logger to CFSSL tests [\#98](https://github.com/johanbrandhorst/certify/pull/98) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Use podrick master instead of branch [\#97](https://github.com/johanbrandhorst/certify/pull/97) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Migrate CFSSL tests to podrick [\#96](https://github.com/johanbrandhorst/certify/pull/96) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Update cfssl [\#95](https://github.com/johanbrandhorst/certify/pull/95) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Speed up fetching by removing branches [\#92](https://github.com/johanbrandhorst/certify/pull/92) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Remove time param from presentation link [\#87](https://github.com/johanbrandhorst/certify/pull/87) ([jjshanks](https://github.com/jjshanks))
+
 ## [v1.6.0](https://github.com/johanbrandhorst/certify/tree/v1.6.0) (2019-10-03)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.5.1...v1.6.0)
 
 **Merged pull requests:**
 
+- Update changelog for v1.6.0 [\#86](https://github.com/johanbrandhorst/certify/pull/86) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Support setting URI SANs in CSRs [\#85](https://github.com/johanbrandhorst/certify/pull/85) ([eandre](https://github.com/eandre))
 
 ## [v1.5.1](https://github.com/johanbrandhorst/certify/tree/v1.5.1) (2019-09-26)
