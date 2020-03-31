@@ -178,6 +178,8 @@ type csrOpts struct {
 	CommonName        string    `json:"common_name"`
 	ExcludeCNFromSANS bool      `json:"exclude_cn_from_sans"`
 	Format            string    `json:"format"`
+	AltNames          otherSans `json:"alt_names,omitempty"`
+	IPSans            otherSans `json:"ip_sans,omitempty"`
 	URISans           otherSans `json:"uri_sans,omitempty"`
 	OtherSans         otherSans `json:"other_sans,omitempty"`
 	TimeToLive        ttl       `json:"ttl,omitempty"`

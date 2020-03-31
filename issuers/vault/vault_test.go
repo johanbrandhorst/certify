@@ -169,6 +169,115 @@ var _ = Describe("Vault Issuer", func() {
 		})
 	})
 
+	Context("with one DNS SAN", func() {
+		BeforeEach(func() {
+			iss = &vault.Issuer{
+				URL:        vaultTLSConf.URL,
+				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
+				Role:       vaultTLSConf.RoleURISANs,
+				TLSConfig: &tls.Config{
+					RootCAs: vaultTLSConf.CertPool,
+				},
+				TimeToLive:              time.Minute * 10,
+				SubjectAlternativeNames: []string{"test.example.com"},
+			}
+		})
+
+		It("issues a certificate", func() {
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			Expect(tlsCert.Leaf.DNSNames).To(ConsistOf("test.example.com"))
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		})
+	})
+
+	Context("with multiple DNS SANs", func() {
+		BeforeEach(func() {
+			iss = &vault.Issuer{
+				URL:        vaultTLSConf.URL,
+				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
+				Role:       vaultTLSConf.RoleURISANs,
+				TLSConfig: &tls.Config{
+					RootCAs: vaultTLSConf.CertPool,
+				},
+				TimeToLive:              time.Minute * 10,
+				SubjectAlternativeNames: []string{"test.example.com", "foobar.example.com"},
+			}
+		})
+
+		It("issues a certificate", func() {
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			Expect(tlsCert.Leaf.DNSNames).To(ConsistOf("test.example.com", "foobar.example.com"))
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		})
+	})
+
+	Context("with one IP SAN", func() {
+		BeforeEach(func() {
+			iss = &vault.Issuer{
+				URL:        vaultTLSConf.URL,
+				AuthMethod: vault.ConstantToken(vaultTLSConf.Token),
+				Role:       vaultTLSConf.RoleURISANs,
+				TLSConfig: &tls.Config{
+					RootCAs: vaultTLSConf.CertPool,
+				},
+				TimeToLive:                time.Minute * 10,
+				IPSubjectAlternativeNames: []string{"127.0.0.1"},
+			}
+		})
+
+		It("issues a certificate", func() {
+			cn := "somename.com"
+
+			tlsCert, err := iss.Issue(context.Background(), cn, conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
+			Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
+
+			Expect(tlsCert.Leaf.IPAddresses).To(HaveLen(1))
+			Expect(tlsCert.Leaf.IPAddresses[0].Equal(net.IPv4(127, 0, 0, 1))).To(BeTrue())
+
+			// Check that chain is included
+			Expect(tlsCert.Certificate).To(HaveLen(2))
+			caCert, err := x509.ParseCertificate(tlsCert.Certificate[1])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caCert.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
+
+			Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
+			Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().Add(iss.(*vault.Issuer).TimeToLive), 5*time.Second))
+		})
+	})
+
 	Context("with a non-standard mount point", func() {
 		BeforeEach(func() {
 			iss = &vault.Issuer{
