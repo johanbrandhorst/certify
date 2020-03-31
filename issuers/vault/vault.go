@@ -56,9 +56,9 @@ type Issuer struct {
 	// To configure DNS SANs directly in the CSR, set CertConfig.SubjectAlternativeNames,
 	SubjectAlternativeNames []string
 
-	// AltNames defines additional DNS or Email Subject Alternative Names
+	// IPSubjectAlternativeNames defines additional IP Address Subject Alternative Names
 	//
-	// Warning: By default Vault reads SANs directly from the
+	// Warning: By default Vault reads IP SANs directly from the
 	// Certificate Signing Request (CSR), and ignores this field completely.
 	// This field only takes effect when the Vault role has set use_csr_sans to false,
 	// and using this setting will ignore any SANs in the CSR.
