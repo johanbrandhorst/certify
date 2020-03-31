@@ -46,6 +46,26 @@ type Issuer struct {
 	// requested from the Vault server.
 	TimeToLive time.Duration
 
+	// SubjectAlternativeNames defines additional DNS or Email Subject Alternative Names
+	//
+	// Warning: By default Vault reads SANs directly from the
+	// Certificate Signing Request (CSR), and ignores this field completely.
+	// This field only takes effect when the Vault role has set use_csr_sans to false,
+	// and using this setting will ignore any SANs in the CSR.
+	//
+	// To configure DNS SANs directly in the CSR, set CertConfig.SubjectAlternativeNames,
+	SubjectAlternativeNames []string
+
+	// AltNames defines additional DNS or Email Subject Alternative Names
+	//
+	// Warning: By default Vault reads SANs directly from the
+	// Certificate Signing Request (CSR), and ignores this field completely.
+	// This field only takes effect when the Vault role has set use_csr_sans to false,
+	// and using this setting will ignore any SANs in the CSR.
+	//
+	// To configure IP SANs directly in the CSR, set CertConfig.IPSubjectAlternativeNames,
+	IPSubjectAlternativeNames []string
+
 	// URISubjectAlternativeNames defines custom URI SANs.
 	// The format is a URI and must match the value specified in allowed_uri_sans, eg spiffe://hostname/foobar
 	//
@@ -124,6 +144,8 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 		CommonName:        commonName,
 		ExcludeCNFromSANS: true,
 		Format:            "pem",
+		AltNames:          v.SubjectAlternativeNames,
+		IPSans:            v.IPSubjectAlternativeNames,
 		URISans:           v.URISubjectAlternativeNames,
 		OtherSans:         v.OtherSubjectAlternativeNames,
 		TimeToLive:        ttl(v.TimeToLive),
