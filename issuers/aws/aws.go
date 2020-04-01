@@ -30,7 +30,7 @@ type Issuer struct {
 	//    conf.Region = endpoints.EuWest2RegionID
 	//    conf.Credentials = aws.NewStaticCredentialsProvider("YOURKEY", "YOURKEYSECRET", "")
 	//    cli := acmpca.New(conf)
-	Client iface.ACMPCAAPI
+	Client iface.ClientAPI
 	// CertificateAuthorityARN specifies the ARN of a pre-created CA
 	// which will be used to issue the certificates.
 	CertificateAuthorityARN string

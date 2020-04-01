@@ -1,10 +1,10 @@
 module github.com/johanbrandhorst/certify
 
-go 1.12
+go 1.14
 
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
-	github.com/aws/aws-sdk-go-v2 v0.7.0
+	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/cenkalti/backoff v2.1.1+incompatible // indirect
 	github.com/cloudflare/cfssl v1.4.0
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808 // indirect

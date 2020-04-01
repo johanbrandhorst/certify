@@ -4,6 +4,7 @@
 package mocks
 
 import (
+	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface"
@@ -11,49 +12,55 @@ import (
 )
 
 var (
-	lockACMPCAAPIMockCreateCertificateAuthorityAuditReportRequest       sync.RWMutex
-	lockACMPCAAPIMockCreateCertificateAuthorityRequest                  sync.RWMutex
-	lockACMPCAAPIMockDeleteCertificateAuthorityRequest                  sync.RWMutex
-	lockACMPCAAPIMockDescribeCertificateAuthorityAuditReportRequest     sync.RWMutex
-	lockACMPCAAPIMockDescribeCertificateAuthorityRequest                sync.RWMutex
-	lockACMPCAAPIMockGetCertificateAuthorityCertificateRequest          sync.RWMutex
-	lockACMPCAAPIMockGetCertificateAuthorityCsrRequest                  sync.RWMutex
-	lockACMPCAAPIMockGetCertificateRequest                              sync.RWMutex
-	lockACMPCAAPIMockImportCertificateAuthorityCertificateRequest       sync.RWMutex
-	lockACMPCAAPIMockIssueCertificateRequest                            sync.RWMutex
-	lockACMPCAAPIMockListCertificateAuthoritiesRequest                  sync.RWMutex
-	lockACMPCAAPIMockListTagsRequest                                    sync.RWMutex
-	lockACMPCAAPIMockRestoreCertificateAuthorityRequest                 sync.RWMutex
-	lockACMPCAAPIMockRevokeCertificateRequest                           sync.RWMutex
-	lockACMPCAAPIMockTagCertificateAuthorityRequest                     sync.RWMutex
-	lockACMPCAAPIMockUntagCertificateAuthorityRequest                   sync.RWMutex
-	lockACMPCAAPIMockUpdateCertificateAuthorityRequest                  sync.RWMutex
-	lockACMPCAAPIMockWaitUntilAuditReportCreated                        sync.RWMutex
-	lockACMPCAAPIMockWaitUntilAuditReportCreatedWithContext             sync.RWMutex
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreated            sync.RWMutex
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreatedWithContext sync.RWMutex
-	lockACMPCAAPIMockWaitUntilCertificateIssued                         sync.RWMutex
-	lockACMPCAAPIMockWaitUntilCertificateIssuedWithContext              sync.RWMutex
+	lockClientAPIMockCreateCertificateAuthorityAuditReportRequest   sync.RWMutex
+	lockClientAPIMockCreateCertificateAuthorityRequest              sync.RWMutex
+	lockClientAPIMockCreatePermissionRequest                        sync.RWMutex
+	lockClientAPIMockDeleteCertificateAuthorityRequest              sync.RWMutex
+	lockClientAPIMockDeletePermissionRequest                        sync.RWMutex
+	lockClientAPIMockDescribeCertificateAuthorityAuditReportRequest sync.RWMutex
+	lockClientAPIMockDescribeCertificateAuthorityRequest            sync.RWMutex
+	lockClientAPIMockGetCertificateAuthorityCertificateRequest      sync.RWMutex
+	lockClientAPIMockGetCertificateAuthorityCsrRequest              sync.RWMutex
+	lockClientAPIMockGetCertificateRequest                          sync.RWMutex
+	lockClientAPIMockImportCertificateAuthorityCertificateRequest   sync.RWMutex
+	lockClientAPIMockIssueCertificateRequest                        sync.RWMutex
+	lockClientAPIMockListCertificateAuthoritiesRequest              sync.RWMutex
+	lockClientAPIMockListPermissionsRequest                         sync.RWMutex
+	lockClientAPIMockListTagsRequest                                sync.RWMutex
+	lockClientAPIMockRestoreCertificateAuthorityRequest             sync.RWMutex
+	lockClientAPIMockRevokeCertificateRequest                       sync.RWMutex
+	lockClientAPIMockTagCertificateAuthorityRequest                 sync.RWMutex
+	lockClientAPIMockUntagCertificateAuthorityRequest               sync.RWMutex
+	lockClientAPIMockUpdateCertificateAuthorityRequest              sync.RWMutex
+	lockClientAPIMockWaitUntilAuditReportCreated                    sync.RWMutex
+	lockClientAPIMockWaitUntilCertificateAuthorityCSRCreated        sync.RWMutex
+	lockClientAPIMockWaitUntilCertificateIssued                     sync.RWMutex
 )
 
-// Ensure, that ACMPCAAPIMock does implement ACMPCAAPI.
+// Ensure, that ClientAPIMock does implement ClientAPI.
 // If this is not the case, regenerate this file with moq.
-var _ acmpcaiface.ACMPCAAPI = &ACMPCAAPIMock{}
+var _ acmpcaiface.ClientAPI = &ClientAPIMock{}
 
-// ACMPCAAPIMock is a mock implementation of ACMPCAAPI.
+// ClientAPIMock is a mock implementation of ClientAPI.
 //
-//     func TestSomethingThatUsesACMPCAAPI(t *testing.T) {
+//     func TestSomethingThatUsesClientAPI(t *testing.T) {
 //
-//         // make and configure a mocked ACMPCAAPI
-//         mockedACMPCAAPI := &ACMPCAAPIMock{
+//         // make and configure a mocked ClientAPI
+//         mockedClientAPI := &ClientAPIMock{
 //             CreateCertificateAuthorityAuditReportRequestFunc: func(in1 *acmpca.CreateCertificateAuthorityAuditReportInput) acmpca.CreateCertificateAuthorityAuditReportRequest {
 // 	               panic("mock out the CreateCertificateAuthorityAuditReportRequest method")
 //             },
 //             CreateCertificateAuthorityRequestFunc: func(in1 *acmpca.CreateCertificateAuthorityInput) acmpca.CreateCertificateAuthorityRequest {
 // 	               panic("mock out the CreateCertificateAuthorityRequest method")
 //             },
+//             CreatePermissionRequestFunc: func(in1 *acmpca.CreatePermissionInput) acmpca.CreatePermissionRequest {
+// 	               panic("mock out the CreatePermissionRequest method")
+//             },
 //             DeleteCertificateAuthorityRequestFunc: func(in1 *acmpca.DeleteCertificateAuthorityInput) acmpca.DeleteCertificateAuthorityRequest {
 // 	               panic("mock out the DeleteCertificateAuthorityRequest method")
+//             },
+//             DeletePermissionRequestFunc: func(in1 *acmpca.DeletePermissionInput) acmpca.DeletePermissionRequest {
+// 	               panic("mock out the DeletePermissionRequest method")
 //             },
 //             DescribeCertificateAuthorityAuditReportRequestFunc: func(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) acmpca.DescribeCertificateAuthorityAuditReportRequest {
 // 	               panic("mock out the DescribeCertificateAuthorityAuditReportRequest method")
@@ -79,6 +86,9 @@ var _ acmpcaiface.ACMPCAAPI = &ACMPCAAPIMock{}
 //             ListCertificateAuthoritiesRequestFunc: func(in1 *acmpca.ListCertificateAuthoritiesInput) acmpca.ListCertificateAuthoritiesRequest {
 // 	               panic("mock out the ListCertificateAuthoritiesRequest method")
 //             },
+//             ListPermissionsRequestFunc: func(in1 *acmpca.ListPermissionsInput) acmpca.ListPermissionsRequest {
+// 	               panic("mock out the ListPermissionsRequest method")
+//             },
 //             ListTagsRequestFunc: func(in1 *acmpca.ListTagsInput) acmpca.ListTagsRequest {
 // 	               panic("mock out the ListTagsRequest method")
 //             },
@@ -97,39 +107,36 @@ var _ acmpcaiface.ACMPCAAPI = &ACMPCAAPIMock{}
 //             UpdateCertificateAuthorityRequestFunc: func(in1 *acmpca.UpdateCertificateAuthorityInput) acmpca.UpdateCertificateAuthorityRequest {
 // 	               panic("mock out the UpdateCertificateAuthorityRequest method")
 //             },
-//             WaitUntilAuditReportCreatedFunc: func(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) error {
+//             WaitUntilAuditReportCreatedFunc: func(in1 context.Context, in2 *acmpca.DescribeCertificateAuthorityAuditReportInput, in3 ...aws.WaiterOption) error {
 // 	               panic("mock out the WaitUntilAuditReportCreated method")
 //             },
-//             WaitUntilAuditReportCreatedWithContextFunc: func(in1 aws.Context, in2 *acmpca.DescribeCertificateAuthorityAuditReportInput, in3 ...aws.WaiterOption) error {
-// 	               panic("mock out the WaitUntilAuditReportCreatedWithContext method")
-//             },
-//             WaitUntilCertificateAuthorityCSRCreatedFunc: func(in1 *acmpca.GetCertificateAuthorityCsrInput) error {
+//             WaitUntilCertificateAuthorityCSRCreatedFunc: func(in1 context.Context, in2 *acmpca.GetCertificateAuthorityCsrInput, in3 ...aws.WaiterOption) error {
 // 	               panic("mock out the WaitUntilCertificateAuthorityCSRCreated method")
 //             },
-//             WaitUntilCertificateAuthorityCSRCreatedWithContextFunc: func(in1 aws.Context, in2 *acmpca.GetCertificateAuthorityCsrInput, in3 ...aws.WaiterOption) error {
-// 	               panic("mock out the WaitUntilCertificateAuthorityCSRCreatedWithContext method")
-//             },
-//             WaitUntilCertificateIssuedFunc: func(in1 *acmpca.GetCertificateInput) error {
+//             WaitUntilCertificateIssuedFunc: func(in1 context.Context, in2 *acmpca.GetCertificateInput, in3 ...aws.WaiterOption) error {
 // 	               panic("mock out the WaitUntilCertificateIssued method")
-//             },
-//             WaitUntilCertificateIssuedWithContextFunc: func(in1 aws.Context, in2 *acmpca.GetCertificateInput, in3 ...aws.WaiterOption) error {
-// 	               panic("mock out the WaitUntilCertificateIssuedWithContext method")
 //             },
 //         }
 //
-//         // use mockedACMPCAAPI in code that requires ACMPCAAPI
+//         // use mockedClientAPI in code that requires ClientAPI
 //         // and then make assertions.
 //
 //     }
-type ACMPCAAPIMock struct {
+type ClientAPIMock struct {
 	// CreateCertificateAuthorityAuditReportRequestFunc mocks the CreateCertificateAuthorityAuditReportRequest method.
 	CreateCertificateAuthorityAuditReportRequestFunc func(in1 *acmpca.CreateCertificateAuthorityAuditReportInput) acmpca.CreateCertificateAuthorityAuditReportRequest
 
 	// CreateCertificateAuthorityRequestFunc mocks the CreateCertificateAuthorityRequest method.
 	CreateCertificateAuthorityRequestFunc func(in1 *acmpca.CreateCertificateAuthorityInput) acmpca.CreateCertificateAuthorityRequest
 
+	// CreatePermissionRequestFunc mocks the CreatePermissionRequest method.
+	CreatePermissionRequestFunc func(in1 *acmpca.CreatePermissionInput) acmpca.CreatePermissionRequest
+
 	// DeleteCertificateAuthorityRequestFunc mocks the DeleteCertificateAuthorityRequest method.
 	DeleteCertificateAuthorityRequestFunc func(in1 *acmpca.DeleteCertificateAuthorityInput) acmpca.DeleteCertificateAuthorityRequest
+
+	// DeletePermissionRequestFunc mocks the DeletePermissionRequest method.
+	DeletePermissionRequestFunc func(in1 *acmpca.DeletePermissionInput) acmpca.DeletePermissionRequest
 
 	// DescribeCertificateAuthorityAuditReportRequestFunc mocks the DescribeCertificateAuthorityAuditReportRequest method.
 	DescribeCertificateAuthorityAuditReportRequestFunc func(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) acmpca.DescribeCertificateAuthorityAuditReportRequest
@@ -155,6 +162,9 @@ type ACMPCAAPIMock struct {
 	// ListCertificateAuthoritiesRequestFunc mocks the ListCertificateAuthoritiesRequest method.
 	ListCertificateAuthoritiesRequestFunc func(in1 *acmpca.ListCertificateAuthoritiesInput) acmpca.ListCertificateAuthoritiesRequest
 
+	// ListPermissionsRequestFunc mocks the ListPermissionsRequest method.
+	ListPermissionsRequestFunc func(in1 *acmpca.ListPermissionsInput) acmpca.ListPermissionsRequest
+
 	// ListTagsRequestFunc mocks the ListTagsRequest method.
 	ListTagsRequestFunc func(in1 *acmpca.ListTagsInput) acmpca.ListTagsRequest
 
@@ -174,22 +184,13 @@ type ACMPCAAPIMock struct {
 	UpdateCertificateAuthorityRequestFunc func(in1 *acmpca.UpdateCertificateAuthorityInput) acmpca.UpdateCertificateAuthorityRequest
 
 	// WaitUntilAuditReportCreatedFunc mocks the WaitUntilAuditReportCreated method.
-	WaitUntilAuditReportCreatedFunc func(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) error
-
-	// WaitUntilAuditReportCreatedWithContextFunc mocks the WaitUntilAuditReportCreatedWithContext method.
-	WaitUntilAuditReportCreatedWithContextFunc func(in1 aws.Context, in2 *acmpca.DescribeCertificateAuthorityAuditReportInput, in3 ...aws.WaiterOption) error
+	WaitUntilAuditReportCreatedFunc func(in1 context.Context, in2 *acmpca.DescribeCertificateAuthorityAuditReportInput, in3 ...aws.WaiterOption) error
 
 	// WaitUntilCertificateAuthorityCSRCreatedFunc mocks the WaitUntilCertificateAuthorityCSRCreated method.
-	WaitUntilCertificateAuthorityCSRCreatedFunc func(in1 *acmpca.GetCertificateAuthorityCsrInput) error
-
-	// WaitUntilCertificateAuthorityCSRCreatedWithContextFunc mocks the WaitUntilCertificateAuthorityCSRCreatedWithContext method.
-	WaitUntilCertificateAuthorityCSRCreatedWithContextFunc func(in1 aws.Context, in2 *acmpca.GetCertificateAuthorityCsrInput, in3 ...aws.WaiterOption) error
+	WaitUntilCertificateAuthorityCSRCreatedFunc func(in1 context.Context, in2 *acmpca.GetCertificateAuthorityCsrInput, in3 ...aws.WaiterOption) error
 
 	// WaitUntilCertificateIssuedFunc mocks the WaitUntilCertificateIssued method.
-	WaitUntilCertificateIssuedFunc func(in1 *acmpca.GetCertificateInput) error
-
-	// WaitUntilCertificateIssuedWithContextFunc mocks the WaitUntilCertificateIssuedWithContext method.
-	WaitUntilCertificateIssuedWithContextFunc func(in1 aws.Context, in2 *acmpca.GetCertificateInput, in3 ...aws.WaiterOption) error
+	WaitUntilCertificateIssuedFunc func(in1 context.Context, in2 *acmpca.GetCertificateInput, in3 ...aws.WaiterOption) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -203,10 +204,20 @@ type ACMPCAAPIMock struct {
 			// In1 is the in1 argument value.
 			In1 *acmpca.CreateCertificateAuthorityInput
 		}
+		// CreatePermissionRequest holds details about calls to the CreatePermissionRequest method.
+		CreatePermissionRequest []struct {
+			// In1 is the in1 argument value.
+			In1 *acmpca.CreatePermissionInput
+		}
 		// DeleteCertificateAuthorityRequest holds details about calls to the DeleteCertificateAuthorityRequest method.
 		DeleteCertificateAuthorityRequest []struct {
 			// In1 is the in1 argument value.
 			In1 *acmpca.DeleteCertificateAuthorityInput
+		}
+		// DeletePermissionRequest holds details about calls to the DeletePermissionRequest method.
+		DeletePermissionRequest []struct {
+			// In1 is the in1 argument value.
+			In1 *acmpca.DeletePermissionInput
 		}
 		// DescribeCertificateAuthorityAuditReportRequest holds details about calls to the DescribeCertificateAuthorityAuditReportRequest method.
 		DescribeCertificateAuthorityAuditReportRequest []struct {
@@ -248,6 +259,11 @@ type ACMPCAAPIMock struct {
 			// In1 is the in1 argument value.
 			In1 *acmpca.ListCertificateAuthoritiesInput
 		}
+		// ListPermissionsRequest holds details about calls to the ListPermissionsRequest method.
+		ListPermissionsRequest []struct {
+			// In1 is the in1 argument value.
+			In1 *acmpca.ListPermissionsInput
+		}
 		// ListTagsRequest holds details about calls to the ListTagsRequest method.
 		ListTagsRequest []struct {
 			// In1 is the in1 argument value.
@@ -281,12 +297,7 @@ type ACMPCAAPIMock struct {
 		// WaitUntilAuditReportCreated holds details about calls to the WaitUntilAuditReportCreated method.
 		WaitUntilAuditReportCreated []struct {
 			// In1 is the in1 argument value.
-			In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
-		}
-		// WaitUntilAuditReportCreatedWithContext holds details about calls to the WaitUntilAuditReportCreatedWithContext method.
-		WaitUntilAuditReportCreatedWithContext []struct {
-			// In1 is the in1 argument value.
-			In1 aws.Context
+			In1 context.Context
 			// In2 is the in2 argument value.
 			In2 *acmpca.DescribeCertificateAuthorityAuditReportInput
 			// In3 is the in3 argument value.
@@ -295,12 +306,7 @@ type ACMPCAAPIMock struct {
 		// WaitUntilCertificateAuthorityCSRCreated holds details about calls to the WaitUntilCertificateAuthorityCSRCreated method.
 		WaitUntilCertificateAuthorityCSRCreated []struct {
 			// In1 is the in1 argument value.
-			In1 *acmpca.GetCertificateAuthorityCsrInput
-		}
-		// WaitUntilCertificateAuthorityCSRCreatedWithContext holds details about calls to the WaitUntilCertificateAuthorityCSRCreatedWithContext method.
-		WaitUntilCertificateAuthorityCSRCreatedWithContext []struct {
-			// In1 is the in1 argument value.
-			In1 aws.Context
+			In1 context.Context
 			// In2 is the in2 argument value.
 			In2 *acmpca.GetCertificateAuthorityCsrInput
 			// In3 is the in3 argument value.
@@ -309,12 +315,7 @@ type ACMPCAAPIMock struct {
 		// WaitUntilCertificateIssued holds details about calls to the WaitUntilCertificateIssued method.
 		WaitUntilCertificateIssued []struct {
 			// In1 is the in1 argument value.
-			In1 *acmpca.GetCertificateInput
-		}
-		// WaitUntilCertificateIssuedWithContext holds details about calls to the WaitUntilCertificateIssuedWithContext method.
-		WaitUntilCertificateIssuedWithContext []struct {
-			// In1 is the in1 argument value.
-			In1 aws.Context
+			In1 context.Context
 			// In2 is the in2 argument value.
 			In2 *acmpca.GetCertificateInput
 			// In3 is the in3 argument value.
@@ -324,710 +325,710 @@ type ACMPCAAPIMock struct {
 }
 
 // CreateCertificateAuthorityAuditReportRequest calls CreateCertificateAuthorityAuditReportRequestFunc.
-func (mock *ACMPCAAPIMock) CreateCertificateAuthorityAuditReportRequest(in1 *acmpca.CreateCertificateAuthorityAuditReportInput) acmpca.CreateCertificateAuthorityAuditReportRequest {
+func (mock *ClientAPIMock) CreateCertificateAuthorityAuditReportRequest(in1 *acmpca.CreateCertificateAuthorityAuditReportInput) acmpca.CreateCertificateAuthorityAuditReportRequest {
 	if mock.CreateCertificateAuthorityAuditReportRequestFunc == nil {
-		panic("ACMPCAAPIMock.CreateCertificateAuthorityAuditReportRequestFunc: method is nil but ACMPCAAPI.CreateCertificateAuthorityAuditReportRequest was just called")
+		panic("ClientAPIMock.CreateCertificateAuthorityAuditReportRequestFunc: method is nil but ClientAPI.CreateCertificateAuthorityAuditReportRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.CreateCertificateAuthorityAuditReportInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockCreateCertificateAuthorityAuditReportRequest.Lock()
+	lockClientAPIMockCreateCertificateAuthorityAuditReportRequest.Lock()
 	mock.calls.CreateCertificateAuthorityAuditReportRequest = append(mock.calls.CreateCertificateAuthorityAuditReportRequest, callInfo)
-	lockACMPCAAPIMockCreateCertificateAuthorityAuditReportRequest.Unlock()
+	lockClientAPIMockCreateCertificateAuthorityAuditReportRequest.Unlock()
 	return mock.CreateCertificateAuthorityAuditReportRequestFunc(in1)
 }
 
 // CreateCertificateAuthorityAuditReportRequestCalls gets all the calls that were made to CreateCertificateAuthorityAuditReportRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.CreateCertificateAuthorityAuditReportRequestCalls())
-func (mock *ACMPCAAPIMock) CreateCertificateAuthorityAuditReportRequestCalls() []struct {
+//     len(mockedClientAPI.CreateCertificateAuthorityAuditReportRequestCalls())
+func (mock *ClientAPIMock) CreateCertificateAuthorityAuditReportRequestCalls() []struct {
 	In1 *acmpca.CreateCertificateAuthorityAuditReportInput
 } {
 	var calls []struct {
 		In1 *acmpca.CreateCertificateAuthorityAuditReportInput
 	}
-	lockACMPCAAPIMockCreateCertificateAuthorityAuditReportRequest.RLock()
+	lockClientAPIMockCreateCertificateAuthorityAuditReportRequest.RLock()
 	calls = mock.calls.CreateCertificateAuthorityAuditReportRequest
-	lockACMPCAAPIMockCreateCertificateAuthorityAuditReportRequest.RUnlock()
+	lockClientAPIMockCreateCertificateAuthorityAuditReportRequest.RUnlock()
 	return calls
 }
 
 // CreateCertificateAuthorityRequest calls CreateCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) CreateCertificateAuthorityRequest(in1 *acmpca.CreateCertificateAuthorityInput) acmpca.CreateCertificateAuthorityRequest {
+func (mock *ClientAPIMock) CreateCertificateAuthorityRequest(in1 *acmpca.CreateCertificateAuthorityInput) acmpca.CreateCertificateAuthorityRequest {
 	if mock.CreateCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.CreateCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.CreateCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.CreateCertificateAuthorityRequestFunc: method is nil but ClientAPI.CreateCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.CreateCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockCreateCertificateAuthorityRequest.Lock()
+	lockClientAPIMockCreateCertificateAuthorityRequest.Lock()
 	mock.calls.CreateCertificateAuthorityRequest = append(mock.calls.CreateCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockCreateCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockCreateCertificateAuthorityRequest.Unlock()
 	return mock.CreateCertificateAuthorityRequestFunc(in1)
 }
 
 // CreateCertificateAuthorityRequestCalls gets all the calls that were made to CreateCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.CreateCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) CreateCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.CreateCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) CreateCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.CreateCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.CreateCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockCreateCertificateAuthorityRequest.RLock()
+	lockClientAPIMockCreateCertificateAuthorityRequest.RLock()
 	calls = mock.calls.CreateCertificateAuthorityRequest
-	lockACMPCAAPIMockCreateCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockCreateCertificateAuthorityRequest.RUnlock()
+	return calls
+}
+
+// CreatePermissionRequest calls CreatePermissionRequestFunc.
+func (mock *ClientAPIMock) CreatePermissionRequest(in1 *acmpca.CreatePermissionInput) acmpca.CreatePermissionRequest {
+	if mock.CreatePermissionRequestFunc == nil {
+		panic("ClientAPIMock.CreatePermissionRequestFunc: method is nil but ClientAPI.CreatePermissionRequest was just called")
+	}
+	callInfo := struct {
+		In1 *acmpca.CreatePermissionInput
+	}{
+		In1: in1,
+	}
+	lockClientAPIMockCreatePermissionRequest.Lock()
+	mock.calls.CreatePermissionRequest = append(mock.calls.CreatePermissionRequest, callInfo)
+	lockClientAPIMockCreatePermissionRequest.Unlock()
+	return mock.CreatePermissionRequestFunc(in1)
+}
+
+// CreatePermissionRequestCalls gets all the calls that were made to CreatePermissionRequest.
+// Check the length with:
+//     len(mockedClientAPI.CreatePermissionRequestCalls())
+func (mock *ClientAPIMock) CreatePermissionRequestCalls() []struct {
+	In1 *acmpca.CreatePermissionInput
+} {
+	var calls []struct {
+		In1 *acmpca.CreatePermissionInput
+	}
+	lockClientAPIMockCreatePermissionRequest.RLock()
+	calls = mock.calls.CreatePermissionRequest
+	lockClientAPIMockCreatePermissionRequest.RUnlock()
 	return calls
 }
 
 // DeleteCertificateAuthorityRequest calls DeleteCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) DeleteCertificateAuthorityRequest(in1 *acmpca.DeleteCertificateAuthorityInput) acmpca.DeleteCertificateAuthorityRequest {
+func (mock *ClientAPIMock) DeleteCertificateAuthorityRequest(in1 *acmpca.DeleteCertificateAuthorityInput) acmpca.DeleteCertificateAuthorityRequest {
 	if mock.DeleteCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.DeleteCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.DeleteCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.DeleteCertificateAuthorityRequestFunc: method is nil but ClientAPI.DeleteCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.DeleteCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockDeleteCertificateAuthorityRequest.Lock()
+	lockClientAPIMockDeleteCertificateAuthorityRequest.Lock()
 	mock.calls.DeleteCertificateAuthorityRequest = append(mock.calls.DeleteCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockDeleteCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockDeleteCertificateAuthorityRequest.Unlock()
 	return mock.DeleteCertificateAuthorityRequestFunc(in1)
 }
 
 // DeleteCertificateAuthorityRequestCalls gets all the calls that were made to DeleteCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.DeleteCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) DeleteCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.DeleteCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) DeleteCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.DeleteCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.DeleteCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockDeleteCertificateAuthorityRequest.RLock()
+	lockClientAPIMockDeleteCertificateAuthorityRequest.RLock()
 	calls = mock.calls.DeleteCertificateAuthorityRequest
-	lockACMPCAAPIMockDeleteCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockDeleteCertificateAuthorityRequest.RUnlock()
+	return calls
+}
+
+// DeletePermissionRequest calls DeletePermissionRequestFunc.
+func (mock *ClientAPIMock) DeletePermissionRequest(in1 *acmpca.DeletePermissionInput) acmpca.DeletePermissionRequest {
+	if mock.DeletePermissionRequestFunc == nil {
+		panic("ClientAPIMock.DeletePermissionRequestFunc: method is nil but ClientAPI.DeletePermissionRequest was just called")
+	}
+	callInfo := struct {
+		In1 *acmpca.DeletePermissionInput
+	}{
+		In1: in1,
+	}
+	lockClientAPIMockDeletePermissionRequest.Lock()
+	mock.calls.DeletePermissionRequest = append(mock.calls.DeletePermissionRequest, callInfo)
+	lockClientAPIMockDeletePermissionRequest.Unlock()
+	return mock.DeletePermissionRequestFunc(in1)
+}
+
+// DeletePermissionRequestCalls gets all the calls that were made to DeletePermissionRequest.
+// Check the length with:
+//     len(mockedClientAPI.DeletePermissionRequestCalls())
+func (mock *ClientAPIMock) DeletePermissionRequestCalls() []struct {
+	In1 *acmpca.DeletePermissionInput
+} {
+	var calls []struct {
+		In1 *acmpca.DeletePermissionInput
+	}
+	lockClientAPIMockDeletePermissionRequest.RLock()
+	calls = mock.calls.DeletePermissionRequest
+	lockClientAPIMockDeletePermissionRequest.RUnlock()
 	return calls
 }
 
 // DescribeCertificateAuthorityAuditReportRequest calls DescribeCertificateAuthorityAuditReportRequestFunc.
-func (mock *ACMPCAAPIMock) DescribeCertificateAuthorityAuditReportRequest(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) acmpca.DescribeCertificateAuthorityAuditReportRequest {
+func (mock *ClientAPIMock) DescribeCertificateAuthorityAuditReportRequest(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) acmpca.DescribeCertificateAuthorityAuditReportRequest {
 	if mock.DescribeCertificateAuthorityAuditReportRequestFunc == nil {
-		panic("ACMPCAAPIMock.DescribeCertificateAuthorityAuditReportRequestFunc: method is nil but ACMPCAAPI.DescribeCertificateAuthorityAuditReportRequest was just called")
+		panic("ClientAPIMock.DescribeCertificateAuthorityAuditReportRequestFunc: method is nil but ClientAPI.DescribeCertificateAuthorityAuditReportRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockDescribeCertificateAuthorityAuditReportRequest.Lock()
+	lockClientAPIMockDescribeCertificateAuthorityAuditReportRequest.Lock()
 	mock.calls.DescribeCertificateAuthorityAuditReportRequest = append(mock.calls.DescribeCertificateAuthorityAuditReportRequest, callInfo)
-	lockACMPCAAPIMockDescribeCertificateAuthorityAuditReportRequest.Unlock()
+	lockClientAPIMockDescribeCertificateAuthorityAuditReportRequest.Unlock()
 	return mock.DescribeCertificateAuthorityAuditReportRequestFunc(in1)
 }
 
 // DescribeCertificateAuthorityAuditReportRequestCalls gets all the calls that were made to DescribeCertificateAuthorityAuditReportRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.DescribeCertificateAuthorityAuditReportRequestCalls())
-func (mock *ACMPCAAPIMock) DescribeCertificateAuthorityAuditReportRequestCalls() []struct {
+//     len(mockedClientAPI.DescribeCertificateAuthorityAuditReportRequestCalls())
+func (mock *ClientAPIMock) DescribeCertificateAuthorityAuditReportRequestCalls() []struct {
 	In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
 } {
 	var calls []struct {
 		In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
 	}
-	lockACMPCAAPIMockDescribeCertificateAuthorityAuditReportRequest.RLock()
+	lockClientAPIMockDescribeCertificateAuthorityAuditReportRequest.RLock()
 	calls = mock.calls.DescribeCertificateAuthorityAuditReportRequest
-	lockACMPCAAPIMockDescribeCertificateAuthorityAuditReportRequest.RUnlock()
+	lockClientAPIMockDescribeCertificateAuthorityAuditReportRequest.RUnlock()
 	return calls
 }
 
 // DescribeCertificateAuthorityRequest calls DescribeCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) DescribeCertificateAuthorityRequest(in1 *acmpca.DescribeCertificateAuthorityInput) acmpca.DescribeCertificateAuthorityRequest {
+func (mock *ClientAPIMock) DescribeCertificateAuthorityRequest(in1 *acmpca.DescribeCertificateAuthorityInput) acmpca.DescribeCertificateAuthorityRequest {
 	if mock.DescribeCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.DescribeCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.DescribeCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.DescribeCertificateAuthorityRequestFunc: method is nil but ClientAPI.DescribeCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.DescribeCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockDescribeCertificateAuthorityRequest.Lock()
+	lockClientAPIMockDescribeCertificateAuthorityRequest.Lock()
 	mock.calls.DescribeCertificateAuthorityRequest = append(mock.calls.DescribeCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockDescribeCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockDescribeCertificateAuthorityRequest.Unlock()
 	return mock.DescribeCertificateAuthorityRequestFunc(in1)
 }
 
 // DescribeCertificateAuthorityRequestCalls gets all the calls that were made to DescribeCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.DescribeCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) DescribeCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.DescribeCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) DescribeCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.DescribeCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.DescribeCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockDescribeCertificateAuthorityRequest.RLock()
+	lockClientAPIMockDescribeCertificateAuthorityRequest.RLock()
 	calls = mock.calls.DescribeCertificateAuthorityRequest
-	lockACMPCAAPIMockDescribeCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockDescribeCertificateAuthorityRequest.RUnlock()
 	return calls
 }
 
 // GetCertificateAuthorityCertificateRequest calls GetCertificateAuthorityCertificateRequestFunc.
-func (mock *ACMPCAAPIMock) GetCertificateAuthorityCertificateRequest(in1 *acmpca.GetCertificateAuthorityCertificateInput) acmpca.GetCertificateAuthorityCertificateRequest {
+func (mock *ClientAPIMock) GetCertificateAuthorityCertificateRequest(in1 *acmpca.GetCertificateAuthorityCertificateInput) acmpca.GetCertificateAuthorityCertificateRequest {
 	if mock.GetCertificateAuthorityCertificateRequestFunc == nil {
-		panic("ACMPCAAPIMock.GetCertificateAuthorityCertificateRequestFunc: method is nil but ACMPCAAPI.GetCertificateAuthorityCertificateRequest was just called")
+		panic("ClientAPIMock.GetCertificateAuthorityCertificateRequestFunc: method is nil but ClientAPI.GetCertificateAuthorityCertificateRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.GetCertificateAuthorityCertificateInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockGetCertificateAuthorityCertificateRequest.Lock()
+	lockClientAPIMockGetCertificateAuthorityCertificateRequest.Lock()
 	mock.calls.GetCertificateAuthorityCertificateRequest = append(mock.calls.GetCertificateAuthorityCertificateRequest, callInfo)
-	lockACMPCAAPIMockGetCertificateAuthorityCertificateRequest.Unlock()
+	lockClientAPIMockGetCertificateAuthorityCertificateRequest.Unlock()
 	return mock.GetCertificateAuthorityCertificateRequestFunc(in1)
 }
 
 // GetCertificateAuthorityCertificateRequestCalls gets all the calls that were made to GetCertificateAuthorityCertificateRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.GetCertificateAuthorityCertificateRequestCalls())
-func (mock *ACMPCAAPIMock) GetCertificateAuthorityCertificateRequestCalls() []struct {
+//     len(mockedClientAPI.GetCertificateAuthorityCertificateRequestCalls())
+func (mock *ClientAPIMock) GetCertificateAuthorityCertificateRequestCalls() []struct {
 	In1 *acmpca.GetCertificateAuthorityCertificateInput
 } {
 	var calls []struct {
 		In1 *acmpca.GetCertificateAuthorityCertificateInput
 	}
-	lockACMPCAAPIMockGetCertificateAuthorityCertificateRequest.RLock()
+	lockClientAPIMockGetCertificateAuthorityCertificateRequest.RLock()
 	calls = mock.calls.GetCertificateAuthorityCertificateRequest
-	lockACMPCAAPIMockGetCertificateAuthorityCertificateRequest.RUnlock()
+	lockClientAPIMockGetCertificateAuthorityCertificateRequest.RUnlock()
 	return calls
 }
 
 // GetCertificateAuthorityCsrRequest calls GetCertificateAuthorityCsrRequestFunc.
-func (mock *ACMPCAAPIMock) GetCertificateAuthorityCsrRequest(in1 *acmpca.GetCertificateAuthorityCsrInput) acmpca.GetCertificateAuthorityCsrRequest {
+func (mock *ClientAPIMock) GetCertificateAuthorityCsrRequest(in1 *acmpca.GetCertificateAuthorityCsrInput) acmpca.GetCertificateAuthorityCsrRequest {
 	if mock.GetCertificateAuthorityCsrRequestFunc == nil {
-		panic("ACMPCAAPIMock.GetCertificateAuthorityCsrRequestFunc: method is nil but ACMPCAAPI.GetCertificateAuthorityCsrRequest was just called")
+		panic("ClientAPIMock.GetCertificateAuthorityCsrRequestFunc: method is nil but ClientAPI.GetCertificateAuthorityCsrRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.GetCertificateAuthorityCsrInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockGetCertificateAuthorityCsrRequest.Lock()
+	lockClientAPIMockGetCertificateAuthorityCsrRequest.Lock()
 	mock.calls.GetCertificateAuthorityCsrRequest = append(mock.calls.GetCertificateAuthorityCsrRequest, callInfo)
-	lockACMPCAAPIMockGetCertificateAuthorityCsrRequest.Unlock()
+	lockClientAPIMockGetCertificateAuthorityCsrRequest.Unlock()
 	return mock.GetCertificateAuthorityCsrRequestFunc(in1)
 }
 
 // GetCertificateAuthorityCsrRequestCalls gets all the calls that were made to GetCertificateAuthorityCsrRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.GetCertificateAuthorityCsrRequestCalls())
-func (mock *ACMPCAAPIMock) GetCertificateAuthorityCsrRequestCalls() []struct {
+//     len(mockedClientAPI.GetCertificateAuthorityCsrRequestCalls())
+func (mock *ClientAPIMock) GetCertificateAuthorityCsrRequestCalls() []struct {
 	In1 *acmpca.GetCertificateAuthorityCsrInput
 } {
 	var calls []struct {
 		In1 *acmpca.GetCertificateAuthorityCsrInput
 	}
-	lockACMPCAAPIMockGetCertificateAuthorityCsrRequest.RLock()
+	lockClientAPIMockGetCertificateAuthorityCsrRequest.RLock()
 	calls = mock.calls.GetCertificateAuthorityCsrRequest
-	lockACMPCAAPIMockGetCertificateAuthorityCsrRequest.RUnlock()
+	lockClientAPIMockGetCertificateAuthorityCsrRequest.RUnlock()
 	return calls
 }
 
 // GetCertificateRequest calls GetCertificateRequestFunc.
-func (mock *ACMPCAAPIMock) GetCertificateRequest(in1 *acmpca.GetCertificateInput) acmpca.GetCertificateRequest {
+func (mock *ClientAPIMock) GetCertificateRequest(in1 *acmpca.GetCertificateInput) acmpca.GetCertificateRequest {
 	if mock.GetCertificateRequestFunc == nil {
-		panic("ACMPCAAPIMock.GetCertificateRequestFunc: method is nil but ACMPCAAPI.GetCertificateRequest was just called")
+		panic("ClientAPIMock.GetCertificateRequestFunc: method is nil but ClientAPI.GetCertificateRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.GetCertificateInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockGetCertificateRequest.Lock()
+	lockClientAPIMockGetCertificateRequest.Lock()
 	mock.calls.GetCertificateRequest = append(mock.calls.GetCertificateRequest, callInfo)
-	lockACMPCAAPIMockGetCertificateRequest.Unlock()
+	lockClientAPIMockGetCertificateRequest.Unlock()
 	return mock.GetCertificateRequestFunc(in1)
 }
 
 // GetCertificateRequestCalls gets all the calls that were made to GetCertificateRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.GetCertificateRequestCalls())
-func (mock *ACMPCAAPIMock) GetCertificateRequestCalls() []struct {
+//     len(mockedClientAPI.GetCertificateRequestCalls())
+func (mock *ClientAPIMock) GetCertificateRequestCalls() []struct {
 	In1 *acmpca.GetCertificateInput
 } {
 	var calls []struct {
 		In1 *acmpca.GetCertificateInput
 	}
-	lockACMPCAAPIMockGetCertificateRequest.RLock()
+	lockClientAPIMockGetCertificateRequest.RLock()
 	calls = mock.calls.GetCertificateRequest
-	lockACMPCAAPIMockGetCertificateRequest.RUnlock()
+	lockClientAPIMockGetCertificateRequest.RUnlock()
 	return calls
 }
 
 // ImportCertificateAuthorityCertificateRequest calls ImportCertificateAuthorityCertificateRequestFunc.
-func (mock *ACMPCAAPIMock) ImportCertificateAuthorityCertificateRequest(in1 *acmpca.ImportCertificateAuthorityCertificateInput) acmpca.ImportCertificateAuthorityCertificateRequest {
+func (mock *ClientAPIMock) ImportCertificateAuthorityCertificateRequest(in1 *acmpca.ImportCertificateAuthorityCertificateInput) acmpca.ImportCertificateAuthorityCertificateRequest {
 	if mock.ImportCertificateAuthorityCertificateRequestFunc == nil {
-		panic("ACMPCAAPIMock.ImportCertificateAuthorityCertificateRequestFunc: method is nil but ACMPCAAPI.ImportCertificateAuthorityCertificateRequest was just called")
+		panic("ClientAPIMock.ImportCertificateAuthorityCertificateRequestFunc: method is nil but ClientAPI.ImportCertificateAuthorityCertificateRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.ImportCertificateAuthorityCertificateInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockImportCertificateAuthorityCertificateRequest.Lock()
+	lockClientAPIMockImportCertificateAuthorityCertificateRequest.Lock()
 	mock.calls.ImportCertificateAuthorityCertificateRequest = append(mock.calls.ImportCertificateAuthorityCertificateRequest, callInfo)
-	lockACMPCAAPIMockImportCertificateAuthorityCertificateRequest.Unlock()
+	lockClientAPIMockImportCertificateAuthorityCertificateRequest.Unlock()
 	return mock.ImportCertificateAuthorityCertificateRequestFunc(in1)
 }
 
 // ImportCertificateAuthorityCertificateRequestCalls gets all the calls that were made to ImportCertificateAuthorityCertificateRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.ImportCertificateAuthorityCertificateRequestCalls())
-func (mock *ACMPCAAPIMock) ImportCertificateAuthorityCertificateRequestCalls() []struct {
+//     len(mockedClientAPI.ImportCertificateAuthorityCertificateRequestCalls())
+func (mock *ClientAPIMock) ImportCertificateAuthorityCertificateRequestCalls() []struct {
 	In1 *acmpca.ImportCertificateAuthorityCertificateInput
 } {
 	var calls []struct {
 		In1 *acmpca.ImportCertificateAuthorityCertificateInput
 	}
-	lockACMPCAAPIMockImportCertificateAuthorityCertificateRequest.RLock()
+	lockClientAPIMockImportCertificateAuthorityCertificateRequest.RLock()
 	calls = mock.calls.ImportCertificateAuthorityCertificateRequest
-	lockACMPCAAPIMockImportCertificateAuthorityCertificateRequest.RUnlock()
+	lockClientAPIMockImportCertificateAuthorityCertificateRequest.RUnlock()
 	return calls
 }
 
 // IssueCertificateRequest calls IssueCertificateRequestFunc.
-func (mock *ACMPCAAPIMock) IssueCertificateRequest(in1 *acmpca.IssueCertificateInput) acmpca.IssueCertificateRequest {
+func (mock *ClientAPIMock) IssueCertificateRequest(in1 *acmpca.IssueCertificateInput) acmpca.IssueCertificateRequest {
 	if mock.IssueCertificateRequestFunc == nil {
-		panic("ACMPCAAPIMock.IssueCertificateRequestFunc: method is nil but ACMPCAAPI.IssueCertificateRequest was just called")
+		panic("ClientAPIMock.IssueCertificateRequestFunc: method is nil but ClientAPI.IssueCertificateRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.IssueCertificateInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockIssueCertificateRequest.Lock()
+	lockClientAPIMockIssueCertificateRequest.Lock()
 	mock.calls.IssueCertificateRequest = append(mock.calls.IssueCertificateRequest, callInfo)
-	lockACMPCAAPIMockIssueCertificateRequest.Unlock()
+	lockClientAPIMockIssueCertificateRequest.Unlock()
 	return mock.IssueCertificateRequestFunc(in1)
 }
 
 // IssueCertificateRequestCalls gets all the calls that were made to IssueCertificateRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.IssueCertificateRequestCalls())
-func (mock *ACMPCAAPIMock) IssueCertificateRequestCalls() []struct {
+//     len(mockedClientAPI.IssueCertificateRequestCalls())
+func (mock *ClientAPIMock) IssueCertificateRequestCalls() []struct {
 	In1 *acmpca.IssueCertificateInput
 } {
 	var calls []struct {
 		In1 *acmpca.IssueCertificateInput
 	}
-	lockACMPCAAPIMockIssueCertificateRequest.RLock()
+	lockClientAPIMockIssueCertificateRequest.RLock()
 	calls = mock.calls.IssueCertificateRequest
-	lockACMPCAAPIMockIssueCertificateRequest.RUnlock()
+	lockClientAPIMockIssueCertificateRequest.RUnlock()
 	return calls
 }
 
 // ListCertificateAuthoritiesRequest calls ListCertificateAuthoritiesRequestFunc.
-func (mock *ACMPCAAPIMock) ListCertificateAuthoritiesRequest(in1 *acmpca.ListCertificateAuthoritiesInput) acmpca.ListCertificateAuthoritiesRequest {
+func (mock *ClientAPIMock) ListCertificateAuthoritiesRequest(in1 *acmpca.ListCertificateAuthoritiesInput) acmpca.ListCertificateAuthoritiesRequest {
 	if mock.ListCertificateAuthoritiesRequestFunc == nil {
-		panic("ACMPCAAPIMock.ListCertificateAuthoritiesRequestFunc: method is nil but ACMPCAAPI.ListCertificateAuthoritiesRequest was just called")
+		panic("ClientAPIMock.ListCertificateAuthoritiesRequestFunc: method is nil but ClientAPI.ListCertificateAuthoritiesRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.ListCertificateAuthoritiesInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockListCertificateAuthoritiesRequest.Lock()
+	lockClientAPIMockListCertificateAuthoritiesRequest.Lock()
 	mock.calls.ListCertificateAuthoritiesRequest = append(mock.calls.ListCertificateAuthoritiesRequest, callInfo)
-	lockACMPCAAPIMockListCertificateAuthoritiesRequest.Unlock()
+	lockClientAPIMockListCertificateAuthoritiesRequest.Unlock()
 	return mock.ListCertificateAuthoritiesRequestFunc(in1)
 }
 
 // ListCertificateAuthoritiesRequestCalls gets all the calls that were made to ListCertificateAuthoritiesRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.ListCertificateAuthoritiesRequestCalls())
-func (mock *ACMPCAAPIMock) ListCertificateAuthoritiesRequestCalls() []struct {
+//     len(mockedClientAPI.ListCertificateAuthoritiesRequestCalls())
+func (mock *ClientAPIMock) ListCertificateAuthoritiesRequestCalls() []struct {
 	In1 *acmpca.ListCertificateAuthoritiesInput
 } {
 	var calls []struct {
 		In1 *acmpca.ListCertificateAuthoritiesInput
 	}
-	lockACMPCAAPIMockListCertificateAuthoritiesRequest.RLock()
+	lockClientAPIMockListCertificateAuthoritiesRequest.RLock()
 	calls = mock.calls.ListCertificateAuthoritiesRequest
-	lockACMPCAAPIMockListCertificateAuthoritiesRequest.RUnlock()
+	lockClientAPIMockListCertificateAuthoritiesRequest.RUnlock()
+	return calls
+}
+
+// ListPermissionsRequest calls ListPermissionsRequestFunc.
+func (mock *ClientAPIMock) ListPermissionsRequest(in1 *acmpca.ListPermissionsInput) acmpca.ListPermissionsRequest {
+	if mock.ListPermissionsRequestFunc == nil {
+		panic("ClientAPIMock.ListPermissionsRequestFunc: method is nil but ClientAPI.ListPermissionsRequest was just called")
+	}
+	callInfo := struct {
+		In1 *acmpca.ListPermissionsInput
+	}{
+		In1: in1,
+	}
+	lockClientAPIMockListPermissionsRequest.Lock()
+	mock.calls.ListPermissionsRequest = append(mock.calls.ListPermissionsRequest, callInfo)
+	lockClientAPIMockListPermissionsRequest.Unlock()
+	return mock.ListPermissionsRequestFunc(in1)
+}
+
+// ListPermissionsRequestCalls gets all the calls that were made to ListPermissionsRequest.
+// Check the length with:
+//     len(mockedClientAPI.ListPermissionsRequestCalls())
+func (mock *ClientAPIMock) ListPermissionsRequestCalls() []struct {
+	In1 *acmpca.ListPermissionsInput
+} {
+	var calls []struct {
+		In1 *acmpca.ListPermissionsInput
+	}
+	lockClientAPIMockListPermissionsRequest.RLock()
+	calls = mock.calls.ListPermissionsRequest
+	lockClientAPIMockListPermissionsRequest.RUnlock()
 	return calls
 }
 
 // ListTagsRequest calls ListTagsRequestFunc.
-func (mock *ACMPCAAPIMock) ListTagsRequest(in1 *acmpca.ListTagsInput) acmpca.ListTagsRequest {
+func (mock *ClientAPIMock) ListTagsRequest(in1 *acmpca.ListTagsInput) acmpca.ListTagsRequest {
 	if mock.ListTagsRequestFunc == nil {
-		panic("ACMPCAAPIMock.ListTagsRequestFunc: method is nil but ACMPCAAPI.ListTagsRequest was just called")
+		panic("ClientAPIMock.ListTagsRequestFunc: method is nil but ClientAPI.ListTagsRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.ListTagsInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockListTagsRequest.Lock()
+	lockClientAPIMockListTagsRequest.Lock()
 	mock.calls.ListTagsRequest = append(mock.calls.ListTagsRequest, callInfo)
-	lockACMPCAAPIMockListTagsRequest.Unlock()
+	lockClientAPIMockListTagsRequest.Unlock()
 	return mock.ListTagsRequestFunc(in1)
 }
 
 // ListTagsRequestCalls gets all the calls that were made to ListTagsRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.ListTagsRequestCalls())
-func (mock *ACMPCAAPIMock) ListTagsRequestCalls() []struct {
+//     len(mockedClientAPI.ListTagsRequestCalls())
+func (mock *ClientAPIMock) ListTagsRequestCalls() []struct {
 	In1 *acmpca.ListTagsInput
 } {
 	var calls []struct {
 		In1 *acmpca.ListTagsInput
 	}
-	lockACMPCAAPIMockListTagsRequest.RLock()
+	lockClientAPIMockListTagsRequest.RLock()
 	calls = mock.calls.ListTagsRequest
-	lockACMPCAAPIMockListTagsRequest.RUnlock()
+	lockClientAPIMockListTagsRequest.RUnlock()
 	return calls
 }
 
 // RestoreCertificateAuthorityRequest calls RestoreCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) RestoreCertificateAuthorityRequest(in1 *acmpca.RestoreCertificateAuthorityInput) acmpca.RestoreCertificateAuthorityRequest {
+func (mock *ClientAPIMock) RestoreCertificateAuthorityRequest(in1 *acmpca.RestoreCertificateAuthorityInput) acmpca.RestoreCertificateAuthorityRequest {
 	if mock.RestoreCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.RestoreCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.RestoreCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.RestoreCertificateAuthorityRequestFunc: method is nil but ClientAPI.RestoreCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.RestoreCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockRestoreCertificateAuthorityRequest.Lock()
+	lockClientAPIMockRestoreCertificateAuthorityRequest.Lock()
 	mock.calls.RestoreCertificateAuthorityRequest = append(mock.calls.RestoreCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockRestoreCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockRestoreCertificateAuthorityRequest.Unlock()
 	return mock.RestoreCertificateAuthorityRequestFunc(in1)
 }
 
 // RestoreCertificateAuthorityRequestCalls gets all the calls that were made to RestoreCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.RestoreCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) RestoreCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.RestoreCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) RestoreCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.RestoreCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.RestoreCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockRestoreCertificateAuthorityRequest.RLock()
+	lockClientAPIMockRestoreCertificateAuthorityRequest.RLock()
 	calls = mock.calls.RestoreCertificateAuthorityRequest
-	lockACMPCAAPIMockRestoreCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockRestoreCertificateAuthorityRequest.RUnlock()
 	return calls
 }
 
 // RevokeCertificateRequest calls RevokeCertificateRequestFunc.
-func (mock *ACMPCAAPIMock) RevokeCertificateRequest(in1 *acmpca.RevokeCertificateInput) acmpca.RevokeCertificateRequest {
+func (mock *ClientAPIMock) RevokeCertificateRequest(in1 *acmpca.RevokeCertificateInput) acmpca.RevokeCertificateRequest {
 	if mock.RevokeCertificateRequestFunc == nil {
-		panic("ACMPCAAPIMock.RevokeCertificateRequestFunc: method is nil but ACMPCAAPI.RevokeCertificateRequest was just called")
+		panic("ClientAPIMock.RevokeCertificateRequestFunc: method is nil but ClientAPI.RevokeCertificateRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.RevokeCertificateInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockRevokeCertificateRequest.Lock()
+	lockClientAPIMockRevokeCertificateRequest.Lock()
 	mock.calls.RevokeCertificateRequest = append(mock.calls.RevokeCertificateRequest, callInfo)
-	lockACMPCAAPIMockRevokeCertificateRequest.Unlock()
+	lockClientAPIMockRevokeCertificateRequest.Unlock()
 	return mock.RevokeCertificateRequestFunc(in1)
 }
 
 // RevokeCertificateRequestCalls gets all the calls that were made to RevokeCertificateRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.RevokeCertificateRequestCalls())
-func (mock *ACMPCAAPIMock) RevokeCertificateRequestCalls() []struct {
+//     len(mockedClientAPI.RevokeCertificateRequestCalls())
+func (mock *ClientAPIMock) RevokeCertificateRequestCalls() []struct {
 	In1 *acmpca.RevokeCertificateInput
 } {
 	var calls []struct {
 		In1 *acmpca.RevokeCertificateInput
 	}
-	lockACMPCAAPIMockRevokeCertificateRequest.RLock()
+	lockClientAPIMockRevokeCertificateRequest.RLock()
 	calls = mock.calls.RevokeCertificateRequest
-	lockACMPCAAPIMockRevokeCertificateRequest.RUnlock()
+	lockClientAPIMockRevokeCertificateRequest.RUnlock()
 	return calls
 }
 
 // TagCertificateAuthorityRequest calls TagCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) TagCertificateAuthorityRequest(in1 *acmpca.TagCertificateAuthorityInput) acmpca.TagCertificateAuthorityRequest {
+func (mock *ClientAPIMock) TagCertificateAuthorityRequest(in1 *acmpca.TagCertificateAuthorityInput) acmpca.TagCertificateAuthorityRequest {
 	if mock.TagCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.TagCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.TagCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.TagCertificateAuthorityRequestFunc: method is nil but ClientAPI.TagCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.TagCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockTagCertificateAuthorityRequest.Lock()
+	lockClientAPIMockTagCertificateAuthorityRequest.Lock()
 	mock.calls.TagCertificateAuthorityRequest = append(mock.calls.TagCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockTagCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockTagCertificateAuthorityRequest.Unlock()
 	return mock.TagCertificateAuthorityRequestFunc(in1)
 }
 
 // TagCertificateAuthorityRequestCalls gets all the calls that were made to TagCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.TagCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) TagCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.TagCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) TagCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.TagCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.TagCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockTagCertificateAuthorityRequest.RLock()
+	lockClientAPIMockTagCertificateAuthorityRequest.RLock()
 	calls = mock.calls.TagCertificateAuthorityRequest
-	lockACMPCAAPIMockTagCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockTagCertificateAuthorityRequest.RUnlock()
 	return calls
 }
 
 // UntagCertificateAuthorityRequest calls UntagCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) UntagCertificateAuthorityRequest(in1 *acmpca.UntagCertificateAuthorityInput) acmpca.UntagCertificateAuthorityRequest {
+func (mock *ClientAPIMock) UntagCertificateAuthorityRequest(in1 *acmpca.UntagCertificateAuthorityInput) acmpca.UntagCertificateAuthorityRequest {
 	if mock.UntagCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.UntagCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.UntagCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.UntagCertificateAuthorityRequestFunc: method is nil but ClientAPI.UntagCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.UntagCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockUntagCertificateAuthorityRequest.Lock()
+	lockClientAPIMockUntagCertificateAuthorityRequest.Lock()
 	mock.calls.UntagCertificateAuthorityRequest = append(mock.calls.UntagCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockUntagCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockUntagCertificateAuthorityRequest.Unlock()
 	return mock.UntagCertificateAuthorityRequestFunc(in1)
 }
 
 // UntagCertificateAuthorityRequestCalls gets all the calls that were made to UntagCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.UntagCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) UntagCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.UntagCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) UntagCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.UntagCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.UntagCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockUntagCertificateAuthorityRequest.RLock()
+	lockClientAPIMockUntagCertificateAuthorityRequest.RLock()
 	calls = mock.calls.UntagCertificateAuthorityRequest
-	lockACMPCAAPIMockUntagCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockUntagCertificateAuthorityRequest.RUnlock()
 	return calls
 }
 
 // UpdateCertificateAuthorityRequest calls UpdateCertificateAuthorityRequestFunc.
-func (mock *ACMPCAAPIMock) UpdateCertificateAuthorityRequest(in1 *acmpca.UpdateCertificateAuthorityInput) acmpca.UpdateCertificateAuthorityRequest {
+func (mock *ClientAPIMock) UpdateCertificateAuthorityRequest(in1 *acmpca.UpdateCertificateAuthorityInput) acmpca.UpdateCertificateAuthorityRequest {
 	if mock.UpdateCertificateAuthorityRequestFunc == nil {
-		panic("ACMPCAAPIMock.UpdateCertificateAuthorityRequestFunc: method is nil but ACMPCAAPI.UpdateCertificateAuthorityRequest was just called")
+		panic("ClientAPIMock.UpdateCertificateAuthorityRequestFunc: method is nil but ClientAPI.UpdateCertificateAuthorityRequest was just called")
 	}
 	callInfo := struct {
 		In1 *acmpca.UpdateCertificateAuthorityInput
 	}{
 		In1: in1,
 	}
-	lockACMPCAAPIMockUpdateCertificateAuthorityRequest.Lock()
+	lockClientAPIMockUpdateCertificateAuthorityRequest.Lock()
 	mock.calls.UpdateCertificateAuthorityRequest = append(mock.calls.UpdateCertificateAuthorityRequest, callInfo)
-	lockACMPCAAPIMockUpdateCertificateAuthorityRequest.Unlock()
+	lockClientAPIMockUpdateCertificateAuthorityRequest.Unlock()
 	return mock.UpdateCertificateAuthorityRequestFunc(in1)
 }
 
 // UpdateCertificateAuthorityRequestCalls gets all the calls that were made to UpdateCertificateAuthorityRequest.
 // Check the length with:
-//     len(mockedACMPCAAPI.UpdateCertificateAuthorityRequestCalls())
-func (mock *ACMPCAAPIMock) UpdateCertificateAuthorityRequestCalls() []struct {
+//     len(mockedClientAPI.UpdateCertificateAuthorityRequestCalls())
+func (mock *ClientAPIMock) UpdateCertificateAuthorityRequestCalls() []struct {
 	In1 *acmpca.UpdateCertificateAuthorityInput
 } {
 	var calls []struct {
 		In1 *acmpca.UpdateCertificateAuthorityInput
 	}
-	lockACMPCAAPIMockUpdateCertificateAuthorityRequest.RLock()
+	lockClientAPIMockUpdateCertificateAuthorityRequest.RLock()
 	calls = mock.calls.UpdateCertificateAuthorityRequest
-	lockACMPCAAPIMockUpdateCertificateAuthorityRequest.RUnlock()
+	lockClientAPIMockUpdateCertificateAuthorityRequest.RUnlock()
 	return calls
 }
 
 // WaitUntilAuditReportCreated calls WaitUntilAuditReportCreatedFunc.
-func (mock *ACMPCAAPIMock) WaitUntilAuditReportCreated(in1 *acmpca.DescribeCertificateAuthorityAuditReportInput) error {
+func (mock *ClientAPIMock) WaitUntilAuditReportCreated(in1 context.Context, in2 *acmpca.DescribeCertificateAuthorityAuditReportInput, in3 ...aws.WaiterOption) error {
 	if mock.WaitUntilAuditReportCreatedFunc == nil {
-		panic("ACMPCAAPIMock.WaitUntilAuditReportCreatedFunc: method is nil but ACMPCAAPI.WaitUntilAuditReportCreated was just called")
+		panic("ClientAPIMock.WaitUntilAuditReportCreatedFunc: method is nil but ClientAPI.WaitUntilAuditReportCreated was just called")
 	}
 	callInfo := struct {
-		In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
+		In1 context.Context
+		In2 *acmpca.DescribeCertificateAuthorityAuditReportInput
+		In3 []aws.WaiterOption
 	}{
 		In1: in1,
+		In2: in2,
+		In3: in3,
 	}
-	lockACMPCAAPIMockWaitUntilAuditReportCreated.Lock()
+	lockClientAPIMockWaitUntilAuditReportCreated.Lock()
 	mock.calls.WaitUntilAuditReportCreated = append(mock.calls.WaitUntilAuditReportCreated, callInfo)
-	lockACMPCAAPIMockWaitUntilAuditReportCreated.Unlock()
-	return mock.WaitUntilAuditReportCreatedFunc(in1)
+	lockClientAPIMockWaitUntilAuditReportCreated.Unlock()
+	return mock.WaitUntilAuditReportCreatedFunc(in1, in2, in3...)
 }
 
 // WaitUntilAuditReportCreatedCalls gets all the calls that were made to WaitUntilAuditReportCreated.
 // Check the length with:
-//     len(mockedACMPCAAPI.WaitUntilAuditReportCreatedCalls())
-func (mock *ACMPCAAPIMock) WaitUntilAuditReportCreatedCalls() []struct {
-	In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
-} {
-	var calls []struct {
-		In1 *acmpca.DescribeCertificateAuthorityAuditReportInput
-	}
-	lockACMPCAAPIMockWaitUntilAuditReportCreated.RLock()
-	calls = mock.calls.WaitUntilAuditReportCreated
-	lockACMPCAAPIMockWaitUntilAuditReportCreated.RUnlock()
-	return calls
-}
-
-// WaitUntilAuditReportCreatedWithContext calls WaitUntilAuditReportCreatedWithContextFunc.
-func (mock *ACMPCAAPIMock) WaitUntilAuditReportCreatedWithContext(in1 aws.Context, in2 *acmpca.DescribeCertificateAuthorityAuditReportInput, in3 ...aws.WaiterOption) error {
-	if mock.WaitUntilAuditReportCreatedWithContextFunc == nil {
-		panic("ACMPCAAPIMock.WaitUntilAuditReportCreatedWithContextFunc: method is nil but ACMPCAAPI.WaitUntilAuditReportCreatedWithContext was just called")
-	}
-	callInfo := struct {
-		In1 aws.Context
-		In2 *acmpca.DescribeCertificateAuthorityAuditReportInput
-		In3 []aws.WaiterOption
-	}{
-		In1: in1,
-		In2: in2,
-		In3: in3,
-	}
-	lockACMPCAAPIMockWaitUntilAuditReportCreatedWithContext.Lock()
-	mock.calls.WaitUntilAuditReportCreatedWithContext = append(mock.calls.WaitUntilAuditReportCreatedWithContext, callInfo)
-	lockACMPCAAPIMockWaitUntilAuditReportCreatedWithContext.Unlock()
-	return mock.WaitUntilAuditReportCreatedWithContextFunc(in1, in2, in3...)
-}
-
-// WaitUntilAuditReportCreatedWithContextCalls gets all the calls that were made to WaitUntilAuditReportCreatedWithContext.
-// Check the length with:
-//     len(mockedACMPCAAPI.WaitUntilAuditReportCreatedWithContextCalls())
-func (mock *ACMPCAAPIMock) WaitUntilAuditReportCreatedWithContextCalls() []struct {
-	In1 aws.Context
+//     len(mockedClientAPI.WaitUntilAuditReportCreatedCalls())
+func (mock *ClientAPIMock) WaitUntilAuditReportCreatedCalls() []struct {
+	In1 context.Context
 	In2 *acmpca.DescribeCertificateAuthorityAuditReportInput
 	In3 []aws.WaiterOption
 } {
 	var calls []struct {
-		In1 aws.Context
+		In1 context.Context
 		In2 *acmpca.DescribeCertificateAuthorityAuditReportInput
 		In3 []aws.WaiterOption
 	}
-	lockACMPCAAPIMockWaitUntilAuditReportCreatedWithContext.RLock()
-	calls = mock.calls.WaitUntilAuditReportCreatedWithContext
-	lockACMPCAAPIMockWaitUntilAuditReportCreatedWithContext.RUnlock()
+	lockClientAPIMockWaitUntilAuditReportCreated.RLock()
+	calls = mock.calls.WaitUntilAuditReportCreated
+	lockClientAPIMockWaitUntilAuditReportCreated.RUnlock()
 	return calls
 }
 
 // WaitUntilCertificateAuthorityCSRCreated calls WaitUntilCertificateAuthorityCSRCreatedFunc.
-func (mock *ACMPCAAPIMock) WaitUntilCertificateAuthorityCSRCreated(in1 *acmpca.GetCertificateAuthorityCsrInput) error {
+func (mock *ClientAPIMock) WaitUntilCertificateAuthorityCSRCreated(in1 context.Context, in2 *acmpca.GetCertificateAuthorityCsrInput, in3 ...aws.WaiterOption) error {
 	if mock.WaitUntilCertificateAuthorityCSRCreatedFunc == nil {
-		panic("ACMPCAAPIMock.WaitUntilCertificateAuthorityCSRCreatedFunc: method is nil but ACMPCAAPI.WaitUntilCertificateAuthorityCSRCreated was just called")
+		panic("ClientAPIMock.WaitUntilCertificateAuthorityCSRCreatedFunc: method is nil but ClientAPI.WaitUntilCertificateAuthorityCSRCreated was just called")
 	}
 	callInfo := struct {
-		In1 *acmpca.GetCertificateAuthorityCsrInput
+		In1 context.Context
+		In2 *acmpca.GetCertificateAuthorityCsrInput
+		In3 []aws.WaiterOption
 	}{
 		In1: in1,
+		In2: in2,
+		In3: in3,
 	}
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreated.Lock()
+	lockClientAPIMockWaitUntilCertificateAuthorityCSRCreated.Lock()
 	mock.calls.WaitUntilCertificateAuthorityCSRCreated = append(mock.calls.WaitUntilCertificateAuthorityCSRCreated, callInfo)
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreated.Unlock()
-	return mock.WaitUntilCertificateAuthorityCSRCreatedFunc(in1)
+	lockClientAPIMockWaitUntilCertificateAuthorityCSRCreated.Unlock()
+	return mock.WaitUntilCertificateAuthorityCSRCreatedFunc(in1, in2, in3...)
 }
 
 // WaitUntilCertificateAuthorityCSRCreatedCalls gets all the calls that were made to WaitUntilCertificateAuthorityCSRCreated.
 // Check the length with:
-//     len(mockedACMPCAAPI.WaitUntilCertificateAuthorityCSRCreatedCalls())
-func (mock *ACMPCAAPIMock) WaitUntilCertificateAuthorityCSRCreatedCalls() []struct {
-	In1 *acmpca.GetCertificateAuthorityCsrInput
-} {
-	var calls []struct {
-		In1 *acmpca.GetCertificateAuthorityCsrInput
-	}
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreated.RLock()
-	calls = mock.calls.WaitUntilCertificateAuthorityCSRCreated
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreated.RUnlock()
-	return calls
-}
-
-// WaitUntilCertificateAuthorityCSRCreatedWithContext calls WaitUntilCertificateAuthorityCSRCreatedWithContextFunc.
-func (mock *ACMPCAAPIMock) WaitUntilCertificateAuthorityCSRCreatedWithContext(in1 aws.Context, in2 *acmpca.GetCertificateAuthorityCsrInput, in3 ...aws.WaiterOption) error {
-	if mock.WaitUntilCertificateAuthorityCSRCreatedWithContextFunc == nil {
-		panic("ACMPCAAPIMock.WaitUntilCertificateAuthorityCSRCreatedWithContextFunc: method is nil but ACMPCAAPI.WaitUntilCertificateAuthorityCSRCreatedWithContext was just called")
-	}
-	callInfo := struct {
-		In1 aws.Context
-		In2 *acmpca.GetCertificateAuthorityCsrInput
-		In3 []aws.WaiterOption
-	}{
-		In1: in1,
-		In2: in2,
-		In3: in3,
-	}
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreatedWithContext.Lock()
-	mock.calls.WaitUntilCertificateAuthorityCSRCreatedWithContext = append(mock.calls.WaitUntilCertificateAuthorityCSRCreatedWithContext, callInfo)
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreatedWithContext.Unlock()
-	return mock.WaitUntilCertificateAuthorityCSRCreatedWithContextFunc(in1, in2, in3...)
-}
-
-// WaitUntilCertificateAuthorityCSRCreatedWithContextCalls gets all the calls that were made to WaitUntilCertificateAuthorityCSRCreatedWithContext.
-// Check the length with:
-//     len(mockedACMPCAAPI.WaitUntilCertificateAuthorityCSRCreatedWithContextCalls())
-func (mock *ACMPCAAPIMock) WaitUntilCertificateAuthorityCSRCreatedWithContextCalls() []struct {
-	In1 aws.Context
+//     len(mockedClientAPI.WaitUntilCertificateAuthorityCSRCreatedCalls())
+func (mock *ClientAPIMock) WaitUntilCertificateAuthorityCSRCreatedCalls() []struct {
+	In1 context.Context
 	In2 *acmpca.GetCertificateAuthorityCsrInput
 	In3 []aws.WaiterOption
 } {
 	var calls []struct {
-		In1 aws.Context
+		In1 context.Context
 		In2 *acmpca.GetCertificateAuthorityCsrInput
 		In3 []aws.WaiterOption
 	}
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreatedWithContext.RLock()
-	calls = mock.calls.WaitUntilCertificateAuthorityCSRCreatedWithContext
-	lockACMPCAAPIMockWaitUntilCertificateAuthorityCSRCreatedWithContext.RUnlock()
+	lockClientAPIMockWaitUntilCertificateAuthorityCSRCreated.RLock()
+	calls = mock.calls.WaitUntilCertificateAuthorityCSRCreated
+	lockClientAPIMockWaitUntilCertificateAuthorityCSRCreated.RUnlock()
 	return calls
 }
 
 // WaitUntilCertificateIssued calls WaitUntilCertificateIssuedFunc.
-func (mock *ACMPCAAPIMock) WaitUntilCertificateIssued(in1 *acmpca.GetCertificateInput) error {
+func (mock *ClientAPIMock) WaitUntilCertificateIssued(in1 context.Context, in2 *acmpca.GetCertificateInput, in3 ...aws.WaiterOption) error {
 	if mock.WaitUntilCertificateIssuedFunc == nil {
-		panic("ACMPCAAPIMock.WaitUntilCertificateIssuedFunc: method is nil but ACMPCAAPI.WaitUntilCertificateIssued was just called")
+		panic("ClientAPIMock.WaitUntilCertificateIssuedFunc: method is nil but ClientAPI.WaitUntilCertificateIssued was just called")
 	}
 	callInfo := struct {
-		In1 *acmpca.GetCertificateInput
-	}{
-		In1: in1,
-	}
-	lockACMPCAAPIMockWaitUntilCertificateIssued.Lock()
-	mock.calls.WaitUntilCertificateIssued = append(mock.calls.WaitUntilCertificateIssued, callInfo)
-	lockACMPCAAPIMockWaitUntilCertificateIssued.Unlock()
-	return mock.WaitUntilCertificateIssuedFunc(in1)
-}
-
-// WaitUntilCertificateIssuedCalls gets all the calls that were made to WaitUntilCertificateIssued.
-// Check the length with:
-//     len(mockedACMPCAAPI.WaitUntilCertificateIssuedCalls())
-func (mock *ACMPCAAPIMock) WaitUntilCertificateIssuedCalls() []struct {
-	In1 *acmpca.GetCertificateInput
-} {
-	var calls []struct {
-		In1 *acmpca.GetCertificateInput
-	}
-	lockACMPCAAPIMockWaitUntilCertificateIssued.RLock()
-	calls = mock.calls.WaitUntilCertificateIssued
-	lockACMPCAAPIMockWaitUntilCertificateIssued.RUnlock()
-	return calls
-}
-
-// WaitUntilCertificateIssuedWithContext calls WaitUntilCertificateIssuedWithContextFunc.
-func (mock *ACMPCAAPIMock) WaitUntilCertificateIssuedWithContext(in1 aws.Context, in2 *acmpca.GetCertificateInput, in3 ...aws.WaiterOption) error {
-	if mock.WaitUntilCertificateIssuedWithContextFunc == nil {
-		panic("ACMPCAAPIMock.WaitUntilCertificateIssuedWithContextFunc: method is nil but ACMPCAAPI.WaitUntilCertificateIssuedWithContext was just called")
-	}
-	callInfo := struct {
-		In1 aws.Context
+		In1 context.Context
 		In2 *acmpca.GetCertificateInput
 		In3 []aws.WaiterOption
 	}{
@@ -1035,27 +1036,27 @@ func (mock *ACMPCAAPIMock) WaitUntilCertificateIssuedWithContext(in1 aws.Context
 		In2: in2,
 		In3: in3,
 	}
-	lockACMPCAAPIMockWaitUntilCertificateIssuedWithContext.Lock()
-	mock.calls.WaitUntilCertificateIssuedWithContext = append(mock.calls.WaitUntilCertificateIssuedWithContext, callInfo)
-	lockACMPCAAPIMockWaitUntilCertificateIssuedWithContext.Unlock()
-	return mock.WaitUntilCertificateIssuedWithContextFunc(in1, in2, in3...)
+	lockClientAPIMockWaitUntilCertificateIssued.Lock()
+	mock.calls.WaitUntilCertificateIssued = append(mock.calls.WaitUntilCertificateIssued, callInfo)
+	lockClientAPIMockWaitUntilCertificateIssued.Unlock()
+	return mock.WaitUntilCertificateIssuedFunc(in1, in2, in3...)
 }
 
-// WaitUntilCertificateIssuedWithContextCalls gets all the calls that were made to WaitUntilCertificateIssuedWithContext.
+// WaitUntilCertificateIssuedCalls gets all the calls that were made to WaitUntilCertificateIssued.
 // Check the length with:
-//     len(mockedACMPCAAPI.WaitUntilCertificateIssuedWithContextCalls())
-func (mock *ACMPCAAPIMock) WaitUntilCertificateIssuedWithContextCalls() []struct {
-	In1 aws.Context
+//     len(mockedClientAPI.WaitUntilCertificateIssuedCalls())
+func (mock *ClientAPIMock) WaitUntilCertificateIssuedCalls() []struct {
+	In1 context.Context
 	In2 *acmpca.GetCertificateInput
 	In3 []aws.WaiterOption
 } {
 	var calls []struct {
-		In1 aws.Context
+		In1 context.Context
 		In2 *acmpca.GetCertificateInput
 		In3 []aws.WaiterOption
 	}
-	lockACMPCAAPIMockWaitUntilCertificateIssuedWithContext.RLock()
-	calls = mock.calls.WaitUntilCertificateIssuedWithContext
-	lockACMPCAAPIMockWaitUntilCertificateIssuedWithContext.RUnlock()
+	lockClientAPIMockWaitUntilCertificateIssued.RLock()
+	calls = mock.calls.WaitUntilCertificateIssued
+	lockClientAPIMockWaitUntilCertificateIssued.RUnlock()
 	return calls
 }

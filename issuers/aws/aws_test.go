@@ -25,7 +25,7 @@ import (
 	"github.com/johanbrandhorst/certify/issuers/aws/mocks"
 )
 
-//go:generate moq -out mocks/client.mock.go -pkg mocks ../../vendor/github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface ACMPCAAPI
+//go:generate moq -out mocks/client.mock.go -pkg mocks ../../vendor/github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface ClientAPI
 
 var _ = Describe("AWS Issuer", func() {
 	It("issues a certificate", func() {
@@ -33,7 +33,7 @@ var _ = Describe("AWS Issuer", func() {
 		certARN := "anotherARN"
 		caCert, caKey, err := generateCertAndKey()
 		Expect(err).To(Succeed())
-		client := &mocks.ACMPCAAPIMock{}
+		client := &mocks.ClientAPIMock{}
 		iss := &aws.Issuer{
 			CertificateAuthorityARN: caARN,
 			Client:                  client,
@@ -129,7 +129,7 @@ var _ = Describe("AWS Issuer", func() {
 				Input: in1,
 			}
 		}
-		client.WaitUntilCertificateIssuedWithContextFunc = func(in1 api.Context, in2 *acmpca.GetCertificateInput, in3 ...api.WaiterOption) error {
+		client.WaitUntilCertificateIssuedFunc = func(in1 context.Context, in2 *acmpca.GetCertificateInput, in3 ...api.WaiterOption) error {
 			Expect(in2.CertificateAuthorityArn).To(PointTo(Equal(caARN)))
 			Expect(in2.CertificateArn).To(PointTo(Equal(certARN)))
 			hl := api.HandlerList{}
