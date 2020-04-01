@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.8.0](https://github.com/johanbrandhorst/certify/tree/v1.8.0) (2020-04-01)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.7.0...v1.8.0)
+
+**Implemented enhancements:**
+
+- Support alt\_names in Vault request [\#114](https://github.com/johanbrandhorst/certify/issues/114)
+
+**Fixed bugs:**
+
+- Undefined: acmpcaiface.ACMPCAAPI [\#111](https://github.com/johanbrandhorst/certify/issues/111)
+
+**Merged pull requests:**
+
+- Add SubjectAlternativeNames and IPSubjectAlternativeNames to Vault issuer [\#115](https://github.com/johanbrandhorst/certify/pull/115) ([nvx](https://github.com/nvx))
+
 ## [v1.7.0](https://github.com/johanbrandhorst/certify/tree/v1.7.0) (2020-02-28)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.7.0-alpha2...v1.7.0)
 
@@ -13,6 +28,7 @@
 
 **Merged pull requests:**
 
+- Generate changelog for 1.7.0 [\#110](https://github.com/johanbrandhorst/certify/pull/110) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - issuers/aws: Fix incorrectly concatenated certificates [\#109](https://github.com/johanbrandhorst/certify/pull/109) ([johanbrandhorst](https://github.com/johanbrandhorst))
 
 ## [v1.7.0-alpha2](https://github.com/johanbrandhorst/certify/tree/v1.7.0-alpha2) (2019-12-29)
