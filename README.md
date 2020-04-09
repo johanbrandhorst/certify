@@ -16,6 +16,14 @@ are made, courtesy of the `GetCertificate` and `GetClientCertificate`
 `tls.Config` hooks. Certificates are optionally cached. Simultaneous requests
 are deduplicated to minimize pressure on issuers.
 
+## Vault walkthrough
+
+My presentation from [GolangPiter 2019](https://golangpiter.com/en/materials/2646)
+contains a walkthrough of how to configure your Vault instance to securely issue
+certificates for your Go clients and servers.
+
+[![Certify presentation](https://img.youtube.com/vi/boG7BSRaJ9E/0.jpg)](https://www.youtube.com/watch?v=boG7BSRaJ9E)
+
 ## Users
 
 - [Georgetown University](https://www.georgetown.edu/)
@@ -102,7 +110,3 @@ respectively is required to present its certificate. If possible, this is
 fetched from the cache, based on the requested server name. If not, a new
 certificate is issued with the requested server name present. For client
 requests, the configured `CommonName` is used.
-
-My presentation at the London HashiCorp meetup has more information:
-
-[![Certify presentation](https://img.youtube.com/vi/4We8yg9yefA/0.jpg)](https://www.youtube.com/watch?v=4We8yg9yefA)
