@@ -17,7 +17,6 @@ require (
 	github.com/hashicorp/vault/sdk v0.1.14-0.20200305172021-03a3749f220d // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.2.0 // indirect
-	github.com/matryer/moq v0.0.0-20191103151256-382bd174c0ef
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/opencontainers/runc v0.1.1 // indirect
@@ -28,7 +27,6 @@ require (
 	github.com/uw-labs/podrick v0.3.1-0.20191110182239-f0d4f8dde70f
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
-	golang.org/x/tools v0.0.0-20190718200317-82a3ea8a504c // indirect
 	google.golang.org/genproto v0.0.0-20190801165951-fa694d86fc64 // indirect
 	google.golang.org/grpc v1.24.0
 	logur.dev/adapter/logrus v0.2.0

@@ -26,9 +26,6 @@ import (
 	"github.com/johanbrandhorst/certify/mocks"
 )
 
-//go:generate moq -out mocks/issuer.mock.go -pkg mocks . Issuer
-//go:generate moq -out mocks/logger.mock.go -pkg mocks . Logger
-
 var _ = Describe("Caches", func() {
 	// Note: this setup step doesn't clean
 	// up this directory properly after running.
