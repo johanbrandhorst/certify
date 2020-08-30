@@ -34,15 +34,11 @@ jobs:
   generate:
     docker:
       - image: golang:latest
-    environment:
-      GO111MODULE: "on"
-      GOPROXY: "https://proxy.golang.org"
     steps:
       - checkout
       - run: apt-get update
       - run: apt-get install -y protobuf-compiler
-      - run: go install github.com/golang/protobuf/protoc-gen-go github.com/matryer/moq
-      - run: go mod vendor # for AWS interface mock generation
+      - run: go install github.com/golang/protobuf/protoc-gen-go
       - run: go generate -x ./...
       - run: go mod tidy
       - run: git diff --exit-code

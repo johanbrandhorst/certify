@@ -25,8 +25,6 @@ import (
 	"github.com/johanbrandhorst/certify/issuers/aws/mocks"
 )
 
-//go:generate moq -out mocks/client.mock.go -pkg mocks ../../vendor/github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface ACMPCAAPI
-
 var _ = Describe("AWS Issuer", func() {
 	It("issues a certificate", func() {
 		caARN := "someARN"
