@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -154,6 +155,11 @@ func (v *Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cer
 	secret, err := v.signCSR(ctx, opts)
 	if err != nil {
 		return nil, err
+	}
+	if secret == nil {
+		// This can happen if the Vault server is sealed or
+		// there are temporary connection issues.
+		return nil, errors.New("no secret returned from Vault, please try again")
 	}
 
 	// https://www.vaultproject.io/api/secret/pki/index.html#sample-response-15
