@@ -1,5 +1,27 @@
 # Change Log
 
+## [v1.8.1](https://github.com/johanbrandhorst/certify/tree/v1.8.1) (2020-09-09)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.8.0...v1.8.1)
+
+**Implemented enhancements:**
+
+- Missing vault issuer documentation [\#121](https://github.com/johanbrandhorst/certify/issues/121)
+- Migrate container tests to podrick [\#93](https://github.com/johanbrandhorst/certify/issues/93)
+
+**Fixed bugs:**
+
+- Generation CI job is failing [\#125](https://github.com/johanbrandhorst/certify/issues/125)
+- Possible nil panic in Vault issuer [\#123](https://github.com/johanbrandhorst/certify/issues/123)
+- go 1.15 x509 common name deprecation [\#122](https://github.com/johanbrandhorst/certify/issues/122)
+- Vault api go module incorrect [\#116](https://github.com/johanbrandhorst/certify/issues/116)
+
+**Merged pull requests:**
+
+- Remove moq generation step [\#126](https://github.com/johanbrandhorst/certify/pull/126) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Fix crash in Vault issuer [\#124](https://github.com/johanbrandhorst/certify/pull/124) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Add golangpiter talk to README [\#120](https://github.com/johanbrandhorst/certify/pull/120) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Update dependency versions [\#119](https://github.com/johanbrandhorst/certify/pull/119) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.8.0](https://github.com/johanbrandhorst/certify/tree/v1.8.0) (2020-04-01)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.7.0...v1.8.0)
 
@@ -13,6 +35,7 @@
 
 **Merged pull requests:**
 
+- Generate changelog for 1.8.0 [\#117](https://github.com/johanbrandhorst/certify/pull/117) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Add SubjectAlternativeNames and IPSubjectAlternativeNames to Vault issuer [\#115](https://github.com/johanbrandhorst/certify/pull/115) ([nvx](https://github.com/nvx))
 
 ## [v1.7.0](https://github.com/johanbrandhorst/certify/tree/v1.7.0) (2020-02-28)
