@@ -7,10 +7,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
-	iface "github.com/aws/aws-sdk-go-v2/service/acmpca/acmpcaiface"
+	"github.com/aws/aws-sdk-go-v2/service/acmpca/types"
 
 	"github.com/johanbrandhorst/certify"
 	"github.com/johanbrandhorst/certify/internal/csr"
@@ -30,7 +32,7 @@ type Issuer struct {
 	//    conf.Region = endpoints.EuWest2RegionID
 	//    conf.Credentials = aws.NewStaticCredentialsProvider("YOURKEY", "YOURKEYSECRET", "")
 	//    cli := acmpca.New(conf)
-	Client iface.ACMPCAAPI
+	Client *acmpca.Client
 	// CertificateAuthorityARN specifies the ARN of a pre-created CA
 	// which will be used to issue the certificates.
 	CertificateAuthorityARN string
@@ -40,52 +42,63 @@ type Issuer struct {
 	// If unset, defaults to 30 days.
 	TimeToLive int
 
+	initOnce sync.Once
+	initErr  error
 	caCert   *x509.Certificate
-	signAlgo acmpca.SigningAlgorithm
+	signAlgo types.SigningAlgorithm
+	waiter   *acmpca.CertificateIssuedWaiter
 }
 
 // Issue issues a certificate from the configured AWS CA backend.
 func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.CertConfig) (*tls.Certificate, error) {
-	if i.caCert == nil {
-		caReq := i.Client.GetCertificateAuthorityCertificateRequest(&acmpca.GetCertificateAuthorityCertificateInput{
+	i.initOnce.Do(func() {
+		i.waiter = acmpca.NewCertificateIssuedWaiter(i.Client)
+
+		caResp, err := i.Client.GetCertificateAuthorityCertificate(ctx, &acmpca.GetCertificateAuthorityCertificateInput{
 			CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
 		})
-
-		caResp, err := caReq.Send()
 		if err != nil {
-			return nil, err
+			i.initErr = err
+			return
 		}
 
 		caBlock, _ := pem.Decode([]byte(*caResp.Certificate))
 		if caBlock == nil {
-			return nil, errors.New("could not parse AWS CA cert")
+			i.initErr = errors.New("could not parse AWS CA cert")
+			return
 		}
 
 		if caBlock.Type != "CERTIFICATE" {
-			return nil, errors.New("saw unexpected PEM Type while requesting AWS CA cert: " + caBlock.Type)
+			i.initErr = errors.New("saw unexpected PEM Type while requesting AWS CA cert: " + caBlock.Type)
+			return
 		}
 
 		i.caCert, err = x509.ParseCertificate(caBlock.Bytes)
 		if err != nil {
-			return nil, err
+			i.initErr = err
+			return
 		}
 
 		switch i.caCert.SignatureAlgorithm {
 		case x509.SHA256WithRSA:
-			i.signAlgo = acmpca.SigningAlgorithmSha256withrsa
+			i.signAlgo = types.SigningAlgorithmSha256withrsa
 		case x509.SHA384WithRSA:
-			i.signAlgo = acmpca.SigningAlgorithmSha384withrsa
+			i.signAlgo = types.SigningAlgorithmSha384withrsa
 		case x509.SHA512WithRSA:
-			i.signAlgo = acmpca.SigningAlgorithmSha512withrsa
+			i.signAlgo = types.SigningAlgorithmSha512withrsa
 		case x509.ECDSAWithSHA256:
-			i.signAlgo = acmpca.SigningAlgorithmSha256withecdsa
+			i.signAlgo = types.SigningAlgorithmSha256withecdsa
 		case x509.ECDSAWithSHA384:
-			i.signAlgo = acmpca.SigningAlgorithmSha384withecdsa
+			i.signAlgo = types.SigningAlgorithmSha384withecdsa
 		case x509.ECDSAWithSHA512:
-			i.signAlgo = acmpca.SigningAlgorithmSha512withecdsa
+			i.signAlgo = types.SigningAlgorithmSha512withecdsa
 		default:
-			return nil, fmt.Errorf("unsupported CA cert signing algorithm: %T", i.caCert.SignatureAlgorithm)
+			i.initErr = fmt.Errorf("unsupported CA cert signing algorithm: %T", i.caCert.SignatureAlgorithm)
+			return
 		}
+	})
+	if i.initErr != nil {
+		return nil, i.initErr
 	}
 
 	csrPEM, keyPEM, err := csr.FromCertConfig(commonName, conf)
@@ -99,38 +112,38 @@ func (i Issuer) Issue(ctx context.Context, commonName string, conf *certify.Cert
 		ttl = int64(i.TimeToLive)
 	}
 
-	csrReq := i.Client.IssueCertificateRequest(&acmpca.IssueCertificateInput{
+	issueResp, err := i.Client.IssueCertificate(ctx, &acmpca.IssueCertificateInput{
 		CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
 		Csr:                     csrPEM,
 		SigningAlgorithm:        i.signAlgo,
-		Validity: &acmpca.Validity{
-			Type:  acmpca.ValidityPeriodTypeDays,
+		Validity: &types.Validity{
+			Type:  types.ValidityPeriodTypeDays,
 			Value: aws.Int64(ttl),
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	csrResp, err := csrReq.Send()
+	err = i.waiter.Wait(ctx, &acmpca.GetCertificateInput{
+		CertificateArn:          issueResp.CertificateArn,
+		CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
+	}, time.Minute)
 	if err != nil {
 		return nil, err
 	}
 
 	getReq := &acmpca.GetCertificateInput{
-		CertificateArn:          csrResp.CertificateArn,
+		CertificateArn:          issueResp.CertificateArn,
 		CertificateAuthorityArn: aws.String(i.CertificateAuthorityARN),
 	}
-	err = i.Client.WaitUntilCertificateIssuedWithContext(ctx, getReq)
+
+	cert, err := i.Client.GetCertificate(ctx, getReq)
 	if err != nil {
 		return nil, err
 	}
 
-	certReq := i.Client.GetCertificateRequest(getReq)
-
-	certResp, err := certReq.Send()
-	if err != nil {
-		return nil, err
-	}
-
-	caChainPEM := append(append([]byte(*certResp.Certificate), '\n'), []byte(*certResp.CertificateChain)...)
+	caChainPEM := append(append([]byte(*cert.Certificate), '\n'), []byte(*cert.CertificateChain)...)
 
 	tlsCert, err := tls.X509KeyPair(caChainPEM, keyPEM)
 	if err != nil {
