@@ -229,9 +229,14 @@ func awsIssuer(conf envtypes.AWS) (*aws.Issuer, error) {
 	}
 	ac := awssdk.Config{}
 	ac.Region = conf.Region
-	ac.Credentials = awssdk.NewStaticCredentialsProvider(conf.AccessKeyID, conf.AccessKeySecret, "")
+	ac.Credentials = awssdk.CredentialsProviderFunc(func(c context.Context) (awssdk.Credentials, error) {
+		return awssdk.Credentials{
+			AccessKeyID:     conf.AccessKeyID,
+			SecretAccessKey: conf.AccessKeySecret,
+		}, nil
+	})
 	return &aws.Issuer{
-		Client:                  acmpca.New(ac),
+		Client:                  acmpca.NewFromConfig(ac),
 		CertificateAuthorityARN: conf.CertificateAuthorityARN,
 		TimeToLive:              conf.TimeToLive,
 	}, nil

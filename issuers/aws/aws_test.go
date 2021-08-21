@@ -9,140 +9,54 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"encoding/pem"
 	"math/big"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 	"time"
 
 	api "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
+	"github.com/aws/aws-sdk-go-v2/service/acmpca/types"
 
 	"github.com/johanbrandhorst/certify"
 	"github.com/johanbrandhorst/certify/issuers/aws"
-	"github.com/johanbrandhorst/certify/issuers/aws/mocks"
 )
 
-var _ = Describe("AWS Issuer", func() {
-	It("issues a certificate", func() {
+func TestIssuer(t *testing.T) {
+	t.Run("It issues a certificate", func(t *testing.T) {
 		caARN := "someARN"
 		certARN := "anotherARN"
 		caCert, caKey, err := generateCertAndKey()
-		Expect(err).To(Succeed())
-		client := &mocks.ACMPCAAPIMock{}
+		if err != nil {
+			t.Fatal(err)
+		}
+		ttl := 25
+		server := httptest.NewTLSServer(&fakeACMPCA{
+			t:            t,
+			certARN:      certARN,
+			caARN:        caARN,
+			caCert:       caCert,
+			caKey:        caKey,
+			validityDays: ttl,
+		})
+
+		client := acmpca.NewFromConfig(api.Config{
+			HTTPClient: server.Client(),
+			EndpointResolver: api.EndpointResolverFunc(func(service, region string) (api.Endpoint, error) {
+				return api.Endpoint{
+					URL: server.URL,
+				}, nil
+			}),
+		})
 		iss := &aws.Issuer{
 			CertificateAuthorityARN: caARN,
 			Client:                  client,
-			TimeToLive:              25,
+			TimeToLive:              ttl,
 		}
-		var signedCert []byte
-		client.IssueCertificateRequestFunc = func(in1 *acmpca.IssueCertificateInput) acmpca.IssueCertificateRequest {
-			Expect(in1.CertificateAuthorityArn).To(PointTo(Equal(caARN)))
-			Expect(in1.Validity.Value).To(PointTo(BeEquivalentTo(iss.TimeToLive)))
-			b, _ := pem.Decode(in1.Csr)
-			csr, err := x509.ParseCertificateRequest(b.Bytes)
-			Expect(err).NotTo(HaveOccurred())
-			serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-			serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-			Expect(err).NotTo(HaveOccurred())
-			template := &x509.Certificate{
-				SerialNumber:       serialNumber,
-				Subject:            csr.Subject,
-				PublicKeyAlgorithm: csr.PublicKeyAlgorithm,
-				PublicKey:          csr.PublicKey,
-				SignatureAlgorithm: x509.SHA256WithRSA,
-				DNSNames:           csr.DNSNames,
-				IPAddresses:        csr.IPAddresses,
-				EmailAddresses:     csr.EmailAddresses,
-				URIs:               csr.URIs,
-				NotBefore:          time.Now(),
-				NotAfter:           time.Now().AddDate(0, 0, int(*in1.Validity.Value)),
-			}
-			crt, err := x509.CreateCertificate(rand.Reader, template, caCert.cert, csr.PublicKey, caKey.key)
-			Expect(err).NotTo(HaveOccurred())
-			signedCert = pem.EncodeToMemory(&pem.Block{
-				Type:  "CERTIFICATE",
-				Bytes: crt,
-			})
-			hl := api.HandlerList{}
-			hl.PushBackNamed(api.NamedHandler{
-				Name: "Send",
-				Fn: func(in *api.Request) {
-					in.Data = &acmpca.IssueCertificateOutput{
-						CertificateArn: api.String(certARN),
-					}
-				},
-			})
-			return acmpca.IssueCertificateRequest{
-				Request: &api.Request{
-					Handlers: api.Handlers{
-						Send: hl,
-					},
-				},
-				Input: in1,
-			}
-		}
-		client.GetCertificateRequestFunc = func(in1 *acmpca.GetCertificateInput) acmpca.GetCertificateRequest {
-			Expect(in1.CertificateArn).To(PointTo(Equal(certARN)))
-			Expect(in1.CertificateAuthorityArn).To(PointTo(Equal(caARN)))
-			hl := api.HandlerList{}
-			hl.PushBackNamed(api.NamedHandler{
-				Name: "Send",
-				Fn: func(in *api.Request) {
-					in.Data = &acmpca.GetCertificateOutput{
-						Certificate:      api.String(string(signedCert)),
-						CertificateChain: api.String(string(caCert.pem)),
-					}
-				},
-			})
-			return acmpca.GetCertificateRequest{
-				Request: &api.Request{
-					Handlers: api.Handlers{
-						Send: hl,
-					},
-				},
-				Input: in1,
-			}
-		}
-		client.GetCertificateAuthorityCertificateRequestFunc = func(in1 *acmpca.GetCertificateAuthorityCertificateInput) acmpca.GetCertificateAuthorityCertificateRequest {
-			Expect(in1.CertificateAuthorityArn).To(PointTo(Equal(caARN)))
-			hl := api.HandlerList{}
-			hl.PushBackNamed(api.NamedHandler{
-				Name: "Send",
-				Fn: func(in *api.Request) {
-					in.Data = &acmpca.GetCertificateAuthorityCertificateOutput{
-						Certificate:      api.String(string(caCert.pem)),
-						CertificateChain: api.String(string(caCert.pem)),
-					}
-				},
-			})
-			return acmpca.GetCertificateAuthorityCertificateRequest{
-				Request: &api.Request{
-					Handlers: api.Handlers{
-						Send: hl,
-					},
-				},
-				Input: in1,
-			}
-		}
-		client.WaitUntilCertificateIssuedWithContextFunc = func(in1 api.Context, in2 *acmpca.GetCertificateInput, in3 ...api.WaiterOption) error {
-			Expect(in2.CertificateAuthorityArn).To(PointTo(Equal(caARN)))
-			Expect(in2.CertificateArn).To(PointTo(Equal(certARN)))
-			hl := api.HandlerList{}
-			hl.PushBackNamed(api.NamedHandler{
-				Name: "Send",
-				Fn: func(in *api.Request) {
-					in.Data = &acmpca.GetCertificateAuthorityCertificateOutput{
-						Certificate:      api.String(string(caCert.pem)),
-						CertificateChain: api.String(string(caCert.pem)),
-					}
-				},
-			})
-			return nil
-		}
-
 		cn := "somename.com"
 		conf := &certify.CertConfig{
 			SubjectAlternativeNames:   []string{"extraname.com", "otherextraname.com"},
@@ -152,26 +66,211 @@ var _ = Describe("AWS Issuer", func() {
 			}),
 		}
 		tlsCert, err := iss.Issue(context.Background(), cn, conf)
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		Expect(tlsCert.Leaf).NotTo(BeNil(), "tlsCert.Leaf should be populated by Issue to track expiry")
-		Expect(tlsCert.Leaf.Subject.CommonName).To(Equal(cn))
-		Expect(tlsCert.Leaf.DNSNames).To(Equal(conf.SubjectAlternativeNames))
-		Expect(tlsCert.Leaf.IPAddresses).To(HaveLen(len(conf.IPSubjectAlternativeNames)))
+		if tlsCert.Leaf == nil {
+			t.Fatal("tlsCert.Leaf should be populated by Issue to track expiry")
+		}
+		if tlsCert.Leaf.Subject.CommonName != cn {
+			t.Fatalf("Unexpected Common name %s, wanted %s", tlsCert.Leaf.Subject.CommonName, cn)
+		}
+		if len(tlsCert.Leaf.DNSNames) != len(conf.SubjectAlternativeNames) {
+			t.Fatalf("Unexpected number of DNS names set, got %d wanted %d", len(tlsCert.Leaf.DNSNames), len(conf.SubjectAlternativeNames))
+		}
+		for i, dnsName := range tlsCert.Leaf.DNSNames {
+			if conf.SubjectAlternativeNames[i] != dnsName {
+				t.Fatalf("Unexpected DNS name %s, wanted %s", dnsName, conf.SubjectAlternativeNames[i])
+			}
+		}
+		if len(tlsCert.Leaf.IPAddresses) != len(conf.IPSubjectAlternativeNames) {
+			t.Fatalf("Unexpected number of IP addresses set, got %d wanted %d", len(tlsCert.Leaf.IPAddresses), len(conf.IPSubjectAlternativeNames))
+		}
 		for i, ip := range tlsCert.Leaf.IPAddresses {
-			Expect(ip.Equal(conf.IPSubjectAlternativeNames[i])).To(BeTrue())
+			if !ip.Equal(conf.IPSubjectAlternativeNames[i]) {
+				t.Fatalf("Unexpected IP address %s, wanted %s", ip, conf.IPSubjectAlternativeNames[i])
+			}
 		}
 
 		// Check that chain is included
-		Expect(tlsCert.Certificate).To(HaveLen(2))
+		if len(tlsCert.Certificate) != 2 {
+			t.Fatalf("Unexpected number of certificates in chain, got %d wanted %d", len(tlsCert.Certificate), 2)
+		}
 		crt, err := x509.ParseCertificate(tlsCert.Certificate[1])
-		Expect(err).NotTo(HaveOccurred())
-		Expect(crt.Subject.SerialNumber).To(Equal(tlsCert.Leaf.Issuer.SerialNumber))
-
-		Expect(tlsCert.Leaf.NotBefore).To(BeTemporally("<", time.Now()))
-		Expect(tlsCert.Leaf.NotAfter).To(BeTemporally("~", time.Now().AddDate(0, 0, iss.TimeToLive), 5*time.Second))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if crt.Subject.SerialNumber != tlsCert.Leaf.Issuer.SerialNumber {
+			t.Fatalf("Unexpected serial number, got %s wanted %s", crt.Subject.SerialNumber, tlsCert.Leaf.Issuer.SerialNumber)
+		}
+		if tlsCert.Leaf.NotBefore.After(time.Now()) {
+			t.Fatalf("Unexpected NotBefore time, got %s wanted > %s", tlsCert.Leaf.NotBefore, time.Now())
+		}
+		if tlsCert.Leaf.NotAfter.Before(time.Now().AddDate(0, 0, iss.TimeToLive).Add(-5*time.Second)) ||
+			tlsCert.Leaf.NotAfter.After(time.Now().AddDate(0, 0, iss.TimeToLive).Add(5*time.Second)) {
+			t.Fatalf(
+				"Unexpected NotAfter time, got %s wanted in [%s, %s]",
+				tlsCert.Leaf.NotAfter,
+				time.Now().AddDate(0, 0, iss.TimeToLive).Add(-5*time.Second),
+				time.Now().AddDate(0, 0, iss.TimeToLive).Add(5*time.Second),
+			)
+		}
 	})
-})
+}
+
+type fakeACMPCA struct {
+	t            *testing.T
+	caARN        string
+	certARN      string
+	caCert       *cert
+	caKey        *key
+	validityDays int
+
+	signedCertPEM []byte
+}
+
+func (f *fakeACMPCA) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Header.Get("X-Amz-Target") {
+	case "ACMPrivateCA.GetCertificateAuthorityCertificate":
+		f.ServeGetCertificateAuthorityCertificate(w, r)
+		return
+	case "ACMPrivateCA.IssueCertificate":
+		f.ServeIssueCertificate(w, r)
+		return
+	case "ACMPrivateCA.GetCertificate":
+		f.ServeGetCertificate(w, r)
+		return
+	default:
+		http.Error(w, "not found", http.StatusNotFound)
+	}
+}
+
+func (f *fakeACMPCA) ServeGetCertificateAuthorityCertificate(w http.ResponseWriter, r *http.Request) {
+	input := struct {
+		CertificateAuthorityARN string `json:"CertificateAuthorityARN,omitempty"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if input.CertificateAuthorityARN != f.caARN {
+		http.Error(w, "unknown CA ARN", http.StatusNotFound)
+		return
+	}
+	output := struct {
+		Certificate string `json:"Certificate,omitempty"`
+	}{
+		Certificate: string(f.caCert.pem),
+	}
+	if err := json.NewEncoder(w).Encode(&output); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (f *fakeACMPCA) ServeIssueCertificate(w http.ResponseWriter, r *http.Request) {
+	input := struct {
+		CertificateAuthorityARN string                 `json:"CertificateAuthorityARN,omitempty"`
+		CSRPem                  []byte                 `json:"Csr,omitempty"`
+		SigningAlgorithm        types.SigningAlgorithm `json:"SigningAlgorithm,omitempty"`
+		Validity                types.Validity         `json:"Validity,omitempty"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if input.CertificateAuthorityARN != f.caARN {
+		http.Error(w, "unknown CA ARN", http.StatusNotFound)
+		return
+	}
+	if input.Validity.Type != types.ValidityPeriodTypeDays {
+		http.Error(w, "unexpected validity period type", http.StatusBadRequest)
+		return
+	}
+	if int(*input.Validity.Value) != f.validityDays {
+		http.Error(w, "unexpected validity period", http.StatusBadRequest)
+		return
+	}
+	block, _ := pem.Decode(input.CSRPem)
+	if block == nil {
+		http.Error(w, "block was nil", http.StatusInternalServerError)
+		return
+	}
+	csr, err := x509.ParseCertificateRequest(block.Bytes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	template := &x509.Certificate{
+		SerialNumber:       serialNumber,
+		Subject:            csr.Subject,
+		PublicKeyAlgorithm: csr.PublicKeyAlgorithm,
+		PublicKey:          csr.PublicKey,
+		SignatureAlgorithm: x509.SHA256WithRSA,
+		DNSNames:           csr.DNSNames,
+		IPAddresses:        csr.IPAddresses,
+		EmailAddresses:     csr.EmailAddresses,
+		URIs:               csr.URIs,
+		NotBefore:          time.Now(),
+		NotAfter:           time.Now().AddDate(0, 0, int(*input.Validity.Value)),
+	}
+	cert, err := x509.CreateCertificate(rand.Reader, template, f.caCert.cert, csr.PublicKey, f.caKey.key)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	f.signedCertPEM = pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
+
+	output := struct {
+		CertificateARN string `json:"CertificateArn,omitempty"`
+	}{
+		CertificateARN: f.certARN,
+	}
+	if err := json.NewEncoder(w).Encode(&output); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (f *fakeACMPCA) ServeGetCertificate(w http.ResponseWriter, r *http.Request) {
+	input := struct {
+		CertificateAuthorityARN string `json:"CertificateAuthorityARN,omitempty"`
+		CertificateARN          string `json:"CertificateARN,omitempty"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if input.CertificateAuthorityARN != f.caARN {
+		http.Error(w, "unknown CA ARN", http.StatusNotFound)
+		return
+	}
+	if input.CertificateARN != f.certARN {
+		http.Error(w, "unknown cert ARN", http.StatusNotFound)
+		return
+	}
+	output := struct {
+		Certificate      string `json:"Certificate,omitempty"`
+		CertificateChain string `json:"CertificateChain,omitempty"`
+	}{
+		Certificate:      string(f.signedCertPEM),
+		CertificateChain: string(f.caCert.pem),
+	}
+	if err := json.NewEncoder(w).Encode(&output); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
 type keyGeneratorFunc func() (crypto.PrivateKey, error)
 
