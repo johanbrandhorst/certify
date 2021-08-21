@@ -136,8 +136,8 @@ func (c *Certify) getOrRenewCert(name string) (*tls.Certificate, error) {
 		return nil, err
 	}
 
-	// De-duplicate simultaneous requests
-	ch := c.issueGroup.DoChan("issue", func() (interface{}, error) {
+	// De-duplicate simultaneous requests for the same name
+	ch := c.issueGroup.DoChan(name, func() (interface{}, error) {
 		c.Logger.Debug("Requesting new certificate from issuer")
 		conf := c.CertConfig.Clone()
 		conf.appendName(name)
