@@ -111,15 +111,15 @@ var _ = BeforeSuite(func() {
 					}`, defaultTTL, maxTTL),
 				},
 				ExposedPorts: map[docker.Port]struct{}{
-					docker.Port("8200"): struct{}{},
-					docker.Port("8201"): struct{}{},
+					docker.Port("8200"): {},
+					docker.Port("8201"): {},
 				},
 			},
 			HostConfig: &docker.HostConfig{
 				PublishAllPorts: true,
 				PortBindings: map[docker.Port][]docker.PortBinding{
-					"8200": []docker.PortBinding{{HostPort: "8200"}},
-					"8201": []docker.PortBinding{{HostPort: "8201"}},
+					"8200": {{HostPort: "8200"}},
+					"8201": {{HostPort: "8201"}},
 				},
 			},
 		})
