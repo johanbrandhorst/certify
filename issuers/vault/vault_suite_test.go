@@ -129,13 +129,13 @@ var _ = BeforeSuite(func() {
 		archive := tar.NewWriter(b)
 		Expect(archive.WriteHeader(&tar.Header{
 			Name: "/cert.pem",
-			Mode: 0644,
+			Mode: 0o644,
 			Size: int64(len(cert)),
 		})).To(Succeed())
 		Expect(archive.Write(cert)).To(Equal(len(cert)))
 		Expect(archive.WriteHeader(&tar.Header{
 			Name: "/key.pem",
-			Mode: 0644,
+			Mode: 0o644,
 			Size: int64(len(key)),
 		})).To(Succeed())
 		Expect(archive.Write(key)).To(Equal(len(key)))
