@@ -1,5 +1,27 @@
 # Change Log
 
+## [v1.9.0](https://github.com/johanbrandhorst/certify/tree/v1.9.0) (2021-08-22)
+[Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.8.1...v1.9.0)
+
+**Implemented enhancements:**
+
+- Release c3673d8 [\#127](https://github.com/johanbrandhorst/certify/issues/127)
+
+**Fixed bugs:**
+
+- improper use of singleflight [\#130](https://github.com/johanbrandhorst/certify/issues/130)
+
+**Merged pull requests:**
+
+- Update module github.com/ory/dockertest to v3.7.0 [\#139](https://github.com/johanbrandhorst/certify/pull/139) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Upgrade all dependencies [\#137](https://github.com/johanbrandhorst/certify/pull/137) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Configure Renovate [\#136](https://github.com/johanbrandhorst/certify/pull/136) ([renovate[bot]](https://github.com/apps/renovate))
+- Upgrade vault version [\#135](https://github.com/johanbrandhorst/certify/pull/135) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Upgrade CFSSL version [\#134](https://github.com/johanbrandhorst/certify/pull/134) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Rewrite AWS issuer [\#133](https://github.com/johanbrandhorst/certify/pull/133) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Get request context from parameter in Go 1.17 [\#132](https://github.com/johanbrandhorst/certify/pull/132) ([johanbrandhorst](https://github.com/johanbrandhorst))
+- Use certificate name as singleflight key [\#131](https://github.com/johanbrandhorst/certify/pull/131) ([johanbrandhorst](https://github.com/johanbrandhorst))
+
 ## [v1.8.1](https://github.com/johanbrandhorst/certify/tree/v1.8.1) (2020-09-09)
 [Full Changelog](https://github.com/johanbrandhorst/certify/compare/v1.8.0...v1.8.1)
 
@@ -17,6 +39,7 @@
 
 **Merged pull requests:**
 
+- Generate changelog for v1.8.1 [\#128](https://github.com/johanbrandhorst/certify/pull/128) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Remove moq generation step [\#126](https://github.com/johanbrandhorst/certify/pull/126) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Fix crash in Vault issuer [\#124](https://github.com/johanbrandhorst/certify/pull/124) ([johanbrandhorst](https://github.com/johanbrandhorst))
 - Add golangpiter talk to README [\#120](https://github.com/johanbrandhorst/certify/pull/120) ([johanbrandhorst](https://github.com/johanbrandhorst))
