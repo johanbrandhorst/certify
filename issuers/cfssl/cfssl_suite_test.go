@@ -73,7 +73,7 @@ var _ = BeforeSuite(func() {
 		conf := config.Config{
 			Signing: &config.Signing{
 				Profiles: map[string]*config.SigningProfile{
-					cfsslConf.Profile: &config.SigningProfile{
+					cfsslConf.Profile: {
 						AuthKeyName:  authKey,
 						Usage:        []string{"signing", "key encipherment", "server auth", "client auth"},
 						Expiry:       time.Hour * 8760,
@@ -83,7 +83,7 @@ var _ = BeforeSuite(func() {
 				Default: config.DefaultConfig(),
 			},
 			AuthKeys: map[string]config.AuthKey{
-				authKey: config.AuthKey{
+				authKey: {
 					Type: "standard",
 					Key:  "0123456789ABCDEF0123456789ABCDEF",
 				},
@@ -102,7 +102,7 @@ var _ = BeforeSuite(func() {
 			return err
 		}
 
-		ctr, err := podrick.StartContainer(ctx, "cfssl/cfssl", "1.3.2", "8888",
+		ctr, err := podrick.StartContainer(ctx, "cfssl/cfssl", "1.6.0", "8888",
 			podrick.WithCmd(cmd),
 			podrick.WithFileUpload(podrick.File{
 				Path:    "/cert.pem",
@@ -157,7 +157,7 @@ var _ = BeforeSuite(func() {
 		conf := config.Config{
 			Signing: &config.Signing{
 				Profiles: map[string]*config.SigningProfile{
-					cfsslTLSConf.Profile: &config.SigningProfile{
+					cfsslTLSConf.Profile: {
 						AuthKeyName:  authKey,
 						Usage:        []string{"signing", "key encipherment", "server auth", "client auth"},
 						Expiry:       time.Hour * 8760,
@@ -167,7 +167,7 @@ var _ = BeforeSuite(func() {
 				Default: config.DefaultConfig(),
 			},
 			AuthKeys: map[string]config.AuthKey{
-				authKey: config.AuthKey{
+				authKey: {
 					Type: "standard",
 					Key:  "0123456789ABCDEF0123456789ABCDEF",
 				},
@@ -189,7 +189,7 @@ var _ = BeforeSuite(func() {
 			return err
 		}
 
-		ctr, err := podrick.StartContainer(ctx, "cfssl/cfssl", "1.3.2", "8889",
+		ctr, err := podrick.StartContainer(ctx, "cfssl/cfssl", "1.6.0", "8889",
 			podrick.WithCmd(cmd),
 			podrick.WithFileUpload(podrick.File{
 				Path:    "/cert.pem",
