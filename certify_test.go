@@ -180,7 +180,7 @@ var _ = Describe("Certify", func() {
 			},
 		})
 		Expect(err).To(Succeed())
-		_, err = cli.GetClientCertificate(nil)
+		_, err = cli.GetClientCertificate(&tls.CertificateRequestInfo{})
 		Expect(err).To(Succeed())
 
 		Expect(issuer.IssueCalls()).To(HaveLen(2))
@@ -222,7 +222,7 @@ var _ = Describe("Certify", func() {
 			})
 			Expect(err).To(Succeed())
 
-			_, err = cli.GetClientCertificate(nil)
+			_, err = cli.GetClientCertificate(&tls.CertificateRequestInfo{})
 			Expect(err).To(Succeed())
 
 			// Should only have called once
@@ -265,7 +265,7 @@ var _ = Describe("Certify", func() {
 				})
 				Expect(err).To(Succeed())
 
-				_, err = cli.GetClientCertificate(nil)
+				_, err = cli.GetClientCertificate(&tls.CertificateRequestInfo{})
 				Expect(err).To(Succeed())
 
 				Expect(issuer.IssueCalls()).To(HaveLen(2))
@@ -386,7 +386,7 @@ var _ = Describe("Certify", func() {
 			gr1 := make(chan struct{})
 			go func() {
 				defer GinkgoRecover()
-				cert, err := cli.GetClientCertificate(nil)
+				cert, err := cli.GetClientCertificate(&tls.CertificateRequestInfo{})
 				Expect(err).To(Succeed())
 				Expect(cert.Leaf.SerialNumber.Int64()).To(BeEquivalentTo(100))
 				close(gr1)
@@ -395,7 +395,7 @@ var _ = Describe("Certify", func() {
 			gr2 := make(chan struct{})
 			go func() {
 				defer GinkgoRecover()
-				cert, err := cli.GetClientCertificate(nil)
+				cert, err := cli.GetClientCertificate(&tls.CertificateRequestInfo{})
 				Expect(err).To(Succeed())
 				Expect(cert.Leaf.SerialNumber.Int64()).To(BeEquivalentTo(100))
 				close(gr2)
