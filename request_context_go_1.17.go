@@ -9,9 +9,19 @@ import (
 )
 
 func getRequestContext(hello *tls.ClientHelloInfo) context.Context {
-	return hello.Context()
+	ctx := hello.Context()
+	// This is only necessary because we can't set the context in our tests
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }
 
 func getClientRequestContext(cri *tls.CertificateRequestInfo) context.Context {
-	return cri.Context()
+	ctx := cri.Context()
+	// This is only necessary because we can't set the context in our tests
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }
