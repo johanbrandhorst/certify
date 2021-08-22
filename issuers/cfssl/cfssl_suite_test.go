@@ -46,7 +46,7 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	cert, key, err := generateCertAndKey("localhost", net.IPv6zero)
+	cert, key, err := generateCertAndKey("localhost", net.IPv4(0, 0, 0, 0), net.IPv6zero)
 	Expect(err).To(Succeed())
 
 	ctx := context.Background()
@@ -234,7 +234,7 @@ var _ = AfterSuite(func() {
 	}
 })
 
-func generateCertAndKey(SAN string, IPSAN net.IP) ([]byte, []byte, error) {
+func generateCertAndKey(SAN string, IPSAN ...net.IP) ([]byte, []byte, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err
@@ -257,7 +257,7 @@ func generateCertAndKey(SAN string, IPSAN net.IP) ([]byte, []byte, error) {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		DNSNames:              []string{SAN},
-		IPAddresses:           []net.IP{IPSAN},
+		IPAddresses:           IPSAN,
 	}
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, priv.Public(), priv)
 	if err != nil {
