@@ -46,7 +46,7 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	cert, key, err := generateCertAndKey("localhost", net.IPv4(0, 0, 0, 0))
+	cert, key, err := generateCertAndKey("localhost", net.IPv6zero)
 	Expect(err).To(Succeed())
 
 	ctx := context.Background()
