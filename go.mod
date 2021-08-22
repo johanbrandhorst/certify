@@ -10,7 +10,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20190426062206-aaeac12a7ffc // indirect
 	github.com/frankban/quicktest v1.4.1 // indirect
 	github.com/go-test/deep v1.0.2 // indirect
-	github.com/golang/protobuf v1.4.3
+	github.com/golang/protobuf v1.5.2
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/vault/api v1.0.5-0.20200117231345-460d63e36490
 	github.com/hashicorp/vault/sdk v0.1.14-0.20200305172021-03a3749f220d // indirect
@@ -23,8 +23,12 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spiffe/go-spiffe v0.0.0-20190518123159-37d000f27824
 	github.com/uw-labs/podrick v0.3.1-0.20191110182239-f0d4f8dde70f
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	google.golang.org/grpc v1.26.0
-	google.golang.org/protobuf v1.23.0
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20210821163610-241b8fcbd6c8 // indirect
+	google.golang.org/grpc v1.40.0
+	google.golang.org/protobuf v1.27.1
 	logur.dev/adapter/logrus v0.2.0
 )
