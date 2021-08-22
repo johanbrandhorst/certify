@@ -28,7 +28,7 @@ import (
 	"github.com/johanbrandhorst/certify/issuers/vault/proto"
 )
 
-//go:generate protoc --go_out=plugins=grpc:./ ./proto/test.proto
+//go:generate protoc --go_out=plugins=grpc,paths=source_relative:./ ./proto/test.proto
 
 type otherName struct {
 	TypeID asn1.ObjectIdentifier
