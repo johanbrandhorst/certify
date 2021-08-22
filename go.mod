@@ -25,5 +25,6 @@ require (
 	github.com/uw-labs/podrick v0.3.1-0.20191110182239-f0d4f8dde70f
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	google.golang.org/grpc v1.26.0
+	google.golang.org/protobuf v1.23.0
 	logur.dev/adapter/logrus v0.2.0
 )
