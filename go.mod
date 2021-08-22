@@ -14,7 +14,6 @@ require (
 	github.com/ory/dockertest/v3 v3.7.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe v1.1.0
-	github.com/uw-labs/podrick v0.4.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
