@@ -13,7 +13,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
-	github.com/ory/dockertest v3.3.5+incompatible
+	github.com/ory/dockertest v3.7.0+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe v1.1.0
 	github.com/uw-labs/podrick v0.4.1
