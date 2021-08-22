@@ -2,21 +2,18 @@ version: 2
 jobs:
   build:
     docker:
-      - image: golang:latest
+      - image: golang:1.17
     steps:
       - checkout
       - run: go build ./...
   format:
     docker:
-      - image: golang:latest
+      - image: golang:1.17
     steps:
       - checkout
       - run:
-          name: Install gofumports outside local module
-          command: |
-            cd $(mktemp -d) &&
-            go mod init tmp &&
-            go get mvdan.cc/gofumpt/gofumports@latest
+          name: Install gofumports
+          command: go install mvdan.cc/gofumpt/gofumports@latest
       - run:
           name: Run gofumports on all non-generated files
           command: grep -L -R "^\/\/ Code generated .* DO NOT EDIT\.$" --exclude-dir=.git --exclude-dir=vendor --include="*.go" | xargs -n 1 gofumports -w -local github.com/johanbrandhorst/certify
@@ -25,7 +22,7 @@ jobs:
           command: git diff --exit-code
   vendor:
     docker:
-      - image: golang:latest
+      - image: golang:1.17
     steps:
       - checkout
       - run: go mod verify
@@ -33,7 +30,7 @@ jobs:
       - run: git diff --exit-code
   generate:
     docker:
-      - image: golang:latest
+      - image: golang:1.17
     steps:
       - checkout
       - run: apt-get update
