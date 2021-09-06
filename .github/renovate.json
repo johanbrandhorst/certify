@@ -1,5 +1,8 @@
 {
   "enabled": true,
+  "extends": [
+    "config:base"
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": [
