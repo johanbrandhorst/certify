@@ -11,7 +11,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
-	github.com/ory/dockertest/v3 v3.7.0
+	github.com/ory/dockertest/v3 v3.8.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spiffe/go-spiffe v1.1.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
