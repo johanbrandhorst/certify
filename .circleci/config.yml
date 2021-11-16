@@ -13,10 +13,10 @@ jobs:
       - checkout
       - run:
           name: Install gofumports
-          command: go install mvdan.cc/gofumpt/gofumports@latest
+          command: go install mvdan.cc/gofumpt@latest
       - run:
           name: Run gofumports on all non-generated files
-          command: grep -L -R "^\/\/ Code generated .* DO NOT EDIT\.$" --exclude-dir=.git --exclude-dir=vendor --include="*.go" | xargs -n 1 gofumports -w -local github.com/johanbrandhorst/certify
+          command: grep -L -R "^\/\/ Code generated .* DO NOT EDIT\.$" --exclude-dir=.git --exclude-dir=vendor --include="*.go" | xargs -n 1 gofumpt -w
       - run:
           name: Check for any changes
           command: git diff --exit-code
