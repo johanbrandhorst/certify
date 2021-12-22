@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.11.2
-	github.com/aws/aws-sdk-go-v2/service/acmpca v1.11.2
+	github.com/aws/aws-sdk-go-v2/service/acmpca v1.12.0
 	github.com/cloudflare/cfssl v1.6.1
 	github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/vault/api v1.3.0
