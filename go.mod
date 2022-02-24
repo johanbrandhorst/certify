@@ -3,7 +3,7 @@ module github.com/johanbrandhorst/certify
 go 1.16
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.13.0
+	github.com/aws/aws-sdk-go-v2 v1.14.0
 	github.com/aws/aws-sdk-go-v2/service/acmpca v1.14.0
 	github.com/cloudflare/cfssl v1.6.1
 	github.com/golang/protobuf v1.5.2
