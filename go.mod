@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/acmpca v1.15.0
 	github.com/cloudflare/cfssl v1.6.1
 	github.com/golang/protobuf v1.5.2
-	github.com/hashicorp/vault/api v1.3.1
+	github.com/hashicorp/vault/api v1.4.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.18.1
