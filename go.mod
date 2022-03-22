@@ -16,6 +16,6 @@ require (
 	github.com/spiffe/go-spiffe v1.1.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/protobuf v1.28.0
 	logur.dev/adapter/logrus v0.5.0
 )
