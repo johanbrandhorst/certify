@@ -28,8 +28,6 @@ import (
 	"github.com/johanbrandhorst/certify/issuers/vault/proto"
 )
 
-//go:generate protoc --go_out=plugins=grpc,paths=source_relative:./ ./proto/test.proto
-
 type otherName struct {
 	TypeID asn1.ObjectIdentifier
 	Value  string `asn1:"explicit,utf8"`
