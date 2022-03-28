@@ -127,8 +127,8 @@ github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.8 h1:CDaO90VZVBAL1sK87S
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.8/go.mod h1:LnTQMTqbKsbtt+UI5+wPsB7jedW+2ZgozoPG8k6cMxg=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.2 h1:XXR3cdOcKRCTZf6ctcqpMf+go1BdzTm6+T9Ul5zxcMI=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.2/go.mod h1:1x4ZP3Z8odssdhuLI+/1Tqw6Pt/VAaP4Tr8EUxHvPXE=
-github.com/aws/aws-sdk-go-v2/service/acmpca v1.17.2 h1:IA6Z8t2e+13PWw9hVR13FR4pgpEBoJivGtzFM3Gpb1g=
-github.com/aws/aws-sdk-go-v2/service/acmpca v1.17.2/go.mod h1:jAl6l6h7vyRQC8cu3XhWym83NQJePGIi2S4aeRWtOG8=
+github.com/aws/aws-sdk-go-v2/service/acmpca v1.17.3 h1:LgQjzWVzxq0KIUYuDkAfrMi7TOY8mHiTouIqXpTeobE=
+github.com/aws/aws-sdk-go-v2/service/acmpca v1.17.3/go.mod h1:jAl6l6h7vyRQC8cu3XhWym83NQJePGIi2S4aeRWtOG8=
 github.com/aws/smithy-go v1.11.2 h1:eG/N+CcUMAvsdffgMvjMKwfyDzIkjM6pfxMJ8Mzc6mE=
 github.com/aws/smithy-go v1.11.2/go.mod h1:3xHYmszWVx2c0kIwQeEVf9uSm4fYZt67FBJnwub1bgM=
 github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59/go.mod h1:q/89r3U2H7sSsE2t6Kca0lfwTK8JdoNGS/yzM/4iH5I=
