@@ -39,7 +39,7 @@ jobs:
       - run: git diff --exit-code
   test:
     machine:
-      image: circleci/classic:edge
+      image: ubuntu-2204:2022.04.1
     # The CircleCI user's GOPATH
     working_directory: /home/circleci/.go_workspace/src/github.com/johanbrandhorst/certify
     steps:
