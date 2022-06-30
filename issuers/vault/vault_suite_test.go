@@ -77,7 +77,7 @@ var _ = BeforeSuite(func() {
 		roleURISANs := "test_uri_sans"
 
 		repo := "vault"
-		version := "1.1.3"
+		version := "1.11.0"
 		img := repo + ":" + version
 		_, err = pool.Client.InspectImage(img)
 		if err != nil {
