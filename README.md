@@ -92,6 +92,55 @@ tlsConfig := &tls.Config{
 For an end-to-end example using gRPC with mutual TLS authentication,
 see the [Vault tests](./issuers/vault/vault_test.go).
 
+### Vault PKI Key Types
+
+When setting up a Vault PKI backend and creating a role for Certify to use when it requests certificates, you'll be asked to specify the key type for the role to use. By default, Certify uses `ecdsa` keys with a 256-bit key length when it generates CSRs for Vault to sign.
+
+If your Vault PKI role is created with a key type other than `ec` or `any`, API calls to Vault will fail with errors like
+
+```bash
+Error making API request.
+
+URL: PUT https://localhost:8200/v1/pki/sign/example.com
+Code: 400. Errors:
+
+* role requires keys of type rsa
+```
+
+To use Certify with `rsa` or `ed25519` keys, you'll need to pass a custom `KeyGenerator` to Certify which satisfies the `certify.KeyGenerator` [interface](https://github.com/johanbrandhorst/certify/blob/168d95c011b19e999a92014956c0d537ab6ff2fc/issuer.go#L17-L20). For example, for an `rsa` key:
+
+```go
+
+type rsaKeyGenerator struct {
+    key crypto.PrivateKey
+    err error
+    o   sync.Once
+}
+
+// This satisfies the `certify.KeyGenerator` interface.
+func (s *rsaKeyGenerator) Generate() (crypto.PrivateKey, error) {
+    s.o.Do(func() {
+        // Use a different random data provider and key length if required.
+        s.key, s.err = rsa.GenerateKey(rand.Reader, 2048)
+    })
+    return s.key, s.err
+}
+
+// Configure Certify's CSR generator to use our custom KeyGenerator
+cfg := &certify.CertConfig{
+    KeyGenerator: &rsaKeyGenerator{},
+}
+
+certify := &certify.Certify{
+    CommonName:  "service1.example.com",
+    Cache:       certify.DirCache("certificates"),
+    Issuer:      issuer,
+    RenewBefore: 10 * time.Minute,
+    // Pass our custom configuration to Certify
+    CertConfig:  cfg,
+}
+```
+
 ## Docker image (sidecar model)
 
 If you really want to use Certify but you are not able to use Go, there is
