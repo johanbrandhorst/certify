@@ -1,4 +1,4 @@
-FROM golang:1.18 as build-env
+FROM golang:1.19 as build-env
 
 COPY . /src/certify
 
