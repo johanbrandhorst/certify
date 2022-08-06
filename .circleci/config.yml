@@ -2,13 +2,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: golang:1.18
+      - image: golang:1.19
     steps:
       - checkout
       - run: go build ./...
   format:
     docker:
-      - image: golang:1.18
+      - image: golang:1.19
     steps:
       - checkout
       - run:
@@ -22,7 +22,7 @@ jobs:
           command: git diff --exit-code
   vendor:
     docker:
-      - image: golang:1.18
+      - image: golang:1.19
     steps:
       - checkout
       - run: go mod verify
@@ -30,7 +30,7 @@ jobs:
       - run: git diff --exit-code
   generate:
     docker:
-      - image: golang:1.18
+      - image: golang:1.19
     steps:
       - checkout
       - run: make install
