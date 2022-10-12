@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/vault/api v1.8.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.20.2
+	github.com/onsi/gomega v1.22.1
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
